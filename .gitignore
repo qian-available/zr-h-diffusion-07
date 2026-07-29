@@ -7,6 +7,11 @@
 **/WAVECAR
 **/CHGCAR
 
+# HDF5 output may embed the complete licensed POTCAR.
+**/vaspout.h5
+**/vaspin.h5
+**/vaspwave.h5
+
 # Regenerable Python cache.
 **/__pycache__/
 *.pyc

@@ -17,6 +17,7 @@ from PIL import Image, ImageDraw, ImageFont
 from neb_common import (
     Structure,
     atomic_write_tsv,
+    known_vasp_images_hdf5_shutdown,
     minimum_image,
     minimum_pair_distance,
     neb_projected_force_history,
@@ -56,10 +57,10 @@ def read_manifest(path: Path) -> dict[str, str]:
     return values
 
 
-def status_pass(path: Path, final_force: float) -> None:
+def status_pass(stage_directory: Path, final_force: float) -> None:
+    path = stage_directory / ".run_status"
     status = parse_key_values(path)
     required = {
-        "vasp_exit": "0",
         "normal_termination": "yes",
         "electronic_convergence": "yes",
         "images": "4",
@@ -70,6 +71,8 @@ def status_pass(path: Path, final_force: float) -> None:
         "vtst_version": "4.2",
     }
     failed = [f"{key}={status.get(key)!r}" for key, expected in required.items() if status.get(key) != expected]
+    if status.get("vasp_exit") != "0" and not known_vasp_images_hdf5_shutdown(stage_directory):
+        failed.append(f"vasp_exit={status.get('vasp_exit')!r}")
     if failed:
         raise ValueError(f"NEB .run_status failed ({', '.join(failed)}): {path}")
     recorded_text = status.get("neb_force_ev_a", "").strip()
@@ -175,7 +178,7 @@ def analyze_path(directory: Path, path_name: str) -> tuple[list[dict[str, object
     final_force = history[-1][1]
     if final_force > FORCE_LIMIT_EV_A + 1.0e-6:
         raise ValueError(f"final NEB projected force failed for {path_name}: {final_force}")
-    status_pass(directory / ".run_status", final_force)
+    status_pass(directory, final_force)
 
     structures: list[Structure] = []
     energies = [start_e0]

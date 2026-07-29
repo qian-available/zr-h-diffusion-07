@@ -197,6 +197,27 @@ def parse_key_values(path: Path) -> dict[str, str]:
     return values
 
 
+def known_vasp_images_hdf5_shutdown(stage_directory: Path) -> bool:
+    """Recognize the VASP <6.4.1 IMAGES/HDF5 failure after valid outputs.
+
+    VASP may return exit code 1 after an otherwise complete NEB run when it
+    tries to finalize ``vaspout.h5``.  Acceptance still requires callers to
+    validate every OUTCAR and the final projected force independently.
+    """
+    status_path = stage_directory / ".run_status"
+    stderr_path = stage_directory / "vasp.stderr"
+    if not status_path.is_file() or not stderr_path.is_file():
+        return False
+    status = parse_key_values(status_path)
+    if status.get("vasp_exit") != "1":
+        return False
+    stderr = stderr_path.read_text(encoding="utf-8", errors="replace")
+    return (
+        re.search(r"internal error in:\s*vhdf5\.F", stderr, re.IGNORECASE) is not None
+        and re.search(r"HDF5 call .* produced error:\s*29\b", stderr, re.IGNORECASE) is not None
+    )
+
+
 def parse_force_blocks(lines: Sequence[str], nions: int) -> list[float]:
     maxima: list[float] = []
     index = 0

@@ -20,6 +20,7 @@ import tempfile
 from neb_common import (
     atomic_write_text,
     atomic_write_tsv,
+    known_vasp_images_hdf5_shutdown,
     minimum_image,
     minimum_pair_distance,
     neb_projected_force_history,
@@ -106,7 +107,6 @@ def validate_ci_source(source: Path) -> float:
     status = parse_key_values(source / ".run_status")
     required = {
         "stage": "pre_neb",
-        "vasp_exit": "0",
         "normal_termination": "yes",
         "electronic_convergence": "yes",
         "lclimb": "false",
@@ -115,6 +115,8 @@ def validate_ci_source(source: Path) -> float:
         "vtst_version": "4.2",
     }
     failed = [f"{key}={status.get(key)!r}" for key, value in required.items() if status.get(key) != value]
+    if status.get("vasp_exit") != "0" and not known_vasp_images_hdf5_shutdown(source):
+        failed.append(f"vasp_exit={status.get('vasp_exit')!r}")
     if failed:
         raise ValueError(f"pre-NEB status is not eligible for CI ({', '.join(failed)}): {source}")
     force = projected_force(source)
@@ -201,6 +203,22 @@ def manifest_rows(
         {"key": "source_endpoint_00_sha256", "value": sha256(source / "00/POSCAR"), "unit": ""},
         {"key": "source_endpoint_05_sha256", "value": sha256(source / "05/POSCAR"), "unit": ""},
     ]
+    if (source / ".run_status").is_file():
+        source_status = parse_key_values(source / ".run_status")
+        rows.extend(
+            (
+                {"key": "source_vasp_exit", "value": source_status.get("vasp_exit", ""), "unit": ""},
+                {
+                    "key": "source_hdf5_postrun_error",
+                    "value": (
+                        "known_vasp_images_error_29"
+                        if known_vasp_images_hdf5_shutdown(source)
+                        else "none"
+                    ),
+                    "unit": "",
+                },
+            )
+        )
     if source_force is not None:
         rows.append({"key": "source_final_neb_force", "value": f"{source_force:.8f}", "unit": "eV/A"})
     for image in INTERMEDIATES:

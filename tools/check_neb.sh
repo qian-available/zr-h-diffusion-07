@@ -42,6 +42,7 @@ for relative in "$@"; do
     complete=0
     final_force=""
     force_values=""
+    hdf5_postrun="no"
     [[ -d "${directory}" ]] || status="FAIL_missing_directory"
     [[ -s "${directory}/INCAR" ]] || status="FAIL_missing_incar"
     [[ -s "${directory}/path_manifest.tsv" ]] || status="FAIL_missing_manifest"
@@ -104,9 +105,9 @@ for relative in "$@"; do
 
     if [[ -s "${directory}/.run_status" ]]; then
         for required in \
-            "vasp_exit=0" \
             "normal_termination=yes" \
             "electronic_convergence=yes" \
+            "ionic_convergence=yes" \
             "stage=${expected_stage}" \
             "force_limit_ev_a=${expected_limit}" \
             "lclimb=${expected_lclimb}" \
@@ -114,6 +115,19 @@ for relative in "$@"; do
             "vtst_version=4.2"; do
             grep -Fqx "${required}" "${directory}/.run_status" || status="FAIL_run_status"
         done
+        recorded_exit="$(awk -F= '$1 == "vasp_exit" {print $2}' \
+            "${directory}/.run_status")"
+        if [[ "${recorded_exit}" != 0 ]]; then
+            if [[ "${recorded_exit}" = 1 ]] &&
+                grep -Eqi 'internal error in:[[:space:]]*vhdf5\.F' \
+                    "${directory}/vasp.stderr" 2>/dev/null &&
+                grep -Eqi 'HDF5 call .* produced error:[[:space:]]*29([^0-9]|$)' \
+                    "${directory}/vasp.stderr" 2>/dev/null; then
+                hdf5_postrun="known_vasp_images_error_29"
+            else
+                status="FAIL_run_status"
+            fi
+        fi
         recorded_force="$(awk -F= '$1 == "neb_force_ev_a" {print $2}' \
             "${directory}/.run_status")"
         if [[ -n "${recorded_force}" ]]; then
@@ -134,7 +148,11 @@ for relative in "$@"; do
         fi
     fi
 
-    [[ "${status}" = PASS ]] || failed=1
+    if [[ "${status}" = PASS && "${hdf5_postrun}" != no ]]; then
+        status="PASS_HDF5_POSTRUN"
+        echo "WARNING: accepted known post-convergence VASP IMAGES/HDF5 error 29: ${relative}" >&2
+    fi
+    [[ "${status}" = PASS || "${status}" = PASS_HDF5_POSTRUN ]] || failed=1
     tmp="${directory}/check_summary.tsv.tmp.$$"
     {
         printf "path\tstage\tstatus\tcomplete_images\tfinal_neb_force_ev_a\n"

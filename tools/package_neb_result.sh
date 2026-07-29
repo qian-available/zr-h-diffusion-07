@@ -11,7 +11,8 @@ Usage:
   bash tools/package_neb_result.sh 03_neb/01_tt_c/ci_01 [OUTPUT_DIR]
 
 The stage must have passed tools/check_neb.sh. The archive contains the
-stage's inputs and VASP evidence but never POTCAR, WAVECAR, or CHGCAR.
+stage's inputs and VASP evidence but never POTCAR, WAVECAR, CHGCAR, or
+HDF5 files. VASP HDF5 output may embed the complete licensed POTCAR.
 OUTPUT_DIR defaults to the parent of 07_h_diffusion_quickstart.
 EOF
 }
@@ -83,6 +84,7 @@ while IFS= read -r -d '' path; do
 done < <(
     find "${stage_dir}" -maxdepth 1 -type f \
         ! -name POTCAR ! -name WAVECAR ! -name CHGCAR ! -name '*.tmp' \
+        ! -iname '*.h5' ! -iname '*.hdf5' \
         -print0 | sort -z
 )
 for image in 00 01 02 03 04 05; do
@@ -96,6 +98,7 @@ for image in 00 01 02 03 04 05; do
     done < <(
         find "${image_dir}" -maxdepth 1 -type f \
             ! -name POTCAR ! -name WAVECAR ! -name CHGCAR ! -name '*.tmp' \
+            ! -iname '*.h5' ! -iname '*.hdf5' \
             -print0 | sort -z
     )
 done
@@ -113,6 +116,11 @@ for forbidden in POTCAR WAVECAR CHGCAR; do
         exit 2
     fi
 done
+if tar -tzf "${tmp_archive}" |
+    awk -F/ 'tolower($NF) ~ /\.(h5|hdf5)$/ {found=1} END {exit !found}'; then
+    echo "ERROR: license-sensitive HDF5 file entered package" >&2
+    exit 2
+fi
 mv "${tmp_archive}" "${archive}"
 (
     cd "${output_dir}"
@@ -125,5 +133,5 @@ trap - EXIT
 echo "RESULT_PACKAGE=${archive}"
 echo "RESULT_SHA256=${checksum}"
 echo "FILES_PACKAGED=${#files[@]}"
-echo "POTCAR_WAVECAR_CHGCAR_EXCLUDED=yes"
+echo "POTCAR_WAVECAR_CHGCAR_HDF5_EXCLUDED=yes"
 echo "NEB result package PASS"

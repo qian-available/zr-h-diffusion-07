@@ -1,0 +1,16 @@
+slurm_job_id=62213597
+vasp_exit=1
+normal_termination=yes
+electronic_convergence=yes
+ionic_convergence=yes
+neb_force_ev_a=
+stage=pre_neb
+force_limit_ev_a=0.10
+lclimb=false
+neb_force_limit_pass=no
+images=4
+accelerator=dcu:4
+vasp_exe=/work/home/liuzhixiao/software/dcu-port-2Feb2023-all/bin/vasp_std
+vasp_sha256=a1b25c7ebf384a3147aa3ad8f77ba5fa020d8eacb8755f81e56d04cafabb1b6f
+vtst_version=4.2
+finished_at=2026-07-29T19:18:02+0800

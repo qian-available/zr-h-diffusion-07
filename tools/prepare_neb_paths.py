@@ -194,6 +194,19 @@ if [[ -n "${neb_force}" ]]; then
     awk -v value="${neb_force}" -v limit="${force_limit}" \
         'BEGIN {exit !(value <= limit + 0.000001)}' && force_ok=yes
 fi
+hdf5_postrun_error=none
+if ((vasp_exit != 0)) &&
+    ((vasp_exit == 1)) &&
+    grep -Eqi 'internal error in:[[:space:]]*vhdf5\.F' vasp.stderr &&
+    grep -Eqi 'HDF5 call .* produced error:[[:space:]]*29([^0-9]|$)' vasp.stderr; then
+    hdf5_postrun_error=known_vasp_images_error_29
+fi
+scientific_result_ok=no
+if [[ "${normal}" = yes && "${electronic}" = yes && "${ionic}" = yes &&
+    "${force_ok}" = yes ]] &&
+    { ((vasp_exit == 0)) || [[ "${hdf5_postrun_error}" = known_vasp_images_error_29 ]]; }; then
+    scientific_result_ok=yes
+fi
 {
     echo "slurm_job_id=${SLURM_JOB_ID}"
     echo "vasp_exit=${vasp_exit}"
@@ -205,6 +218,8 @@ fi
     echo "force_limit_ev_a=${force_limit}"
     echo "lclimb=false"
     echo "neb_force_limit_pass=${force_ok}"
+    echo "hdf5_postrun_error=${hdf5_postrun_error}"
+    echo "scientific_result_ok=${scientific_result_ok}"
     echo "images=4"
     echo "accelerator=dcu:4"
     echo "vasp_exe=${vasp_exe}"
@@ -213,7 +228,7 @@ fi
     echo "finished_at=$(date --iso-8601=seconds)"
 } >.run_status.tmp
 mv .run_status.tmp .run_status
-((vasp_exit == 0)) && [[ "${normal}" = yes && "${electronic}" = yes && "${ionic}" = yes && "${force_ok}" = yes ]]
+[[ "${scientific_result_ok}" = yes ]]
 """
 
 

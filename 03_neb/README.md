@@ -12,6 +12,11 @@
 `tools/prepare_neb_stage.py` 才能从4个 `CONTCAR` 建立子目录 `ci_01/`，其中使用
 `EDIFFG=-0.03 eV/A`、`LCLIMB=.TRUE.`。
 
+截至2026-07-29，TT预NEB（Job `62213597`）已完成29个离子步。四幅中间图像的最终
+NEB投影力为 `0.094234/0.092931/0.092919/0.094215 eV/A`，最大值
+`0.094234 eV/A`，通过 `0.10 eV/A` 预弛豫门槛。下一步是从这些 `CONTCAR` 建立
+`01_tt_c/ci_01`；TO尚未提交。
+
 ## 为什么选择 TT_c 和 TO
 
 [Zhang、Jiang与Bai对α-Zr-H扩散网络的DFT+KMC研究](https://doi.org/10.1038/srep41033)
@@ -90,6 +95,12 @@ VTST 4.2 将 `FORCES: max atom, RMS` 写入各中间图像的 `01–04/OUTCAR`�
 因此不能用根目录标准输出代替图像OUTCAR。检查、阶段生成和最终分析脚本均按图像OUTCAR
 审计；每幅图像还必须包含 `reached required accuracy`。
 
+本次TT预NEB使用的旧作业脚本正因从根目录 `vasp.stdout` 取力而在 `.run_status` 留下空值；
+验收器已从四份OUTCAR独立复算。该DCU VASP还在所有科学输出写完后触发
+`vhdf5.F error 29`，原始退出码因此为1。四份OUTCAR仍包含正常结束、电子/离子收敛和完整
+末态，故审计状态记为 `PASS_HDF5_POSTRUN`，不篡改原始退出码。后续作业脚本会单独记录这一
+已知收尾异常与科学结果状态。
+
 只有TT两个阶段均通过并下载验收后，才按相同步骤执行 `02_to`。脚本不自动提交下一阶段。
 
 SCNet不直接连接GitHub。每个阶段检查通过后，在07工作流根目录生成下载包，例如：
@@ -99,8 +110,11 @@ bash tools/package_neb_result.sh 03_neb/01_tt_c
 bash tools/package_neb_result.sh 03_neb/01_tt_c/ci_01
 ```
 
-结果包和对应 `.sha256` 写到07目录的上一级，不含POTCAR、WAVECAR或CHGCAR。下载到本地并
-校验后，再由本地Git/Git LFS纳入版本。
+结果包和对应 `.sha256` 写到07目录的上一级，不含POTCAR、WAVECAR、CHGCAR或HDF5文件。
+VASP的 `vaspout.h5` 可能内嵌完整POTCAR，禁止进入下载包和Git。下载到本地并校验后，再由
+本地Git/Git LFS纳入版本。本次TT预NEB下载包为
+`ZrH07_03_neb_01_tt_c_pre_neb_job62213597_20260729.tar.gz`，SHA-256为
+`c4d44a08c0f700756420592a52f00f5a7dd87a40085dfb8bb17ca4a56b2d07a3`。
 
 ## 墙时续算
 
@@ -128,7 +142,7 @@ python tools/analyze_neb.py \
 ```
 
 若有 `ci_02`，对应参数改为最后通过的CI目录。势垒只读取最终CI能量；收敛表和力图同时连接
-普通NEB与CI两段。截至2026-07-29，TT普通NEB预弛豫已在SCNet运行；CI尚未完成，因此当前
+普通NEB与CI两段。截至2026-07-29，TT普通NEB预弛豫已经通过验收；CI尚未完成，因此当前
 仍没有可报告的最终扩散势垒。
 
 本路线仍是 `450 eV + Gamma 4x4x3 + 4图像` 玩具任务，不包含6图像、ZPE、有限尺寸或

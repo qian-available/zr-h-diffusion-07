@@ -79,19 +79,13 @@ set -e
 
 normal=yes
 electronic=yes
-ionic=yes
 for image in 01 02 03 04; do
     grep -q "General timing and accounting" "${image}/OUTCAR" 2>/dev/null || normal=no
     grep -q "aborting loop because EDIFF is reached" "${image}/OUTCAR" 2>/dev/null || electronic=no
-    grep -q "reached required accuracy" "${image}/OUTCAR" 2>/dev/null || ionic=no
 done
-neb_force="$(
-    for image in 01 02 03 04; do
-        awk '/FORCES: max atom, RMS/ {value=$(NF-1)} END {if (value != "") print value}' \
-            "${image}/OUTCAR" 2>/dev/null
-    done | awk 'NR == 1 {maximum=$1} $1 > maximum {maximum=$1}
-        END {if (NR) printf "%.8f", maximum}'
-)"
+ionic=no
+grep -q "reached required accuracy" vasp.stdout 2>/dev/null && ionic=yes
+neb_force="$(awk '/FORCES: max atom, RMS/ {value=$(NF-1)} END {print value}' vasp.stdout 2>/dev/null || true)"
 force_ok=no
 if [[ -n "${neb_force}" ]]; then
     awk -v value="${neb_force}" -v limit="${force_limit}" \

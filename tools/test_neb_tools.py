@@ -12,7 +12,7 @@ import tempfile
 import unittest
 
 from neb_common import Structure, h_neighbors, require_file, require_same_topology
-from prepare_neb_paths import build_symmetry_endpoint, prepare_path
+from prepare_neb_paths import JOB_TEMPLATE, build_symmetry_endpoint, prepare_path
 
 
 TOOLS = Path(__file__).resolve().parent
@@ -134,11 +134,11 @@ class AnalyzerEndToEndTest(unittest.TestCase):
             incar = (WORKFLOW / "03_neb" / relative / "INCAR").read_text(encoding="utf-8")
             self.assertIn("EDIFFG = -0.10", incar)
             self.assertIn("LCLIMB = .FALSE.", incar)
-            job = (WORKFLOW / "03_neb" / relative / "job.slurm").read_text(encoding="utf-8")
-            self.assertIn('stage="pre_neb"', job)
-            self.assertIn('force_limit="0.10"', job)
-            self.assertIn('"${image}/OUTCAR"', job)
-            self.assertNotIn("END {print value}' vasp.stdout", job)
+        self.assertIn('stage="pre_neb"', JOB_TEMPLATE)
+        self.assertIn('force_limit="0.10"', JOB_TEMPLATE)
+        self.assertIn('"${image}/OUTCAR"', JOB_TEMPLATE)
+        self.assertNotIn("END {print value}' vasp.stdout", JOB_TEMPLATE)
+        self.assertIn("known_vasp_images_error_29", JOB_TEMPLATE)
 
     def test_staged_cineb_generation_and_analysis(self) -> None:
         source = WORKFLOW / "03_neb"
@@ -332,6 +332,98 @@ class AnalyzerEndToEndTest(unittest.TestCase):
                 env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
             )
             self.assertEqual(completed.returncode, 0, completed.stderr)
+
+    def test_ci_generation_accepts_known_hdf5_postrun_error(self) -> None:
+        source = WORKFLOW / "03_neb/01_tt_c"
+        if not source.is_dir():
+            self.skipTest("generated NEB inputs are unavailable")
+        with tempfile.TemporaryDirectory() as directory_name:
+            directory = Path(directory_name)
+            pre = directory / "pre"
+            shutil.copytree(source, pre)
+            populate_stage(
+                pre,
+                -821.95359478,
+                (0.060, 0.130, 0.100, 0.045),
+                stage="pre_neb",
+                forces=(0.180, 0.090),
+            )
+            status_path = pre / ".run_status"
+            status = status_path.read_text(encoding="utf-8")
+            status = status.replace("vasp_exit=0", "vasp_exit=1")
+            status = status.replace("neb_force_ev_a=0.090000", "neb_force_ev_a=")
+            status = status.replace("neb_force_limit_pass=yes", "neb_force_limit_pass=no")
+            status_path.write_text(status, encoding="utf-8")
+            (pre / "vasp.stderr").write_text(
+                "internal error in: vhdf5.F at line: 110\n"
+                "HDF5 call in vhdf5.F:110 produced error: 29\n",
+                encoding="utf-8",
+            )
+            target = directory / "ci"
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(TOOLS / "prepare_neb_stage.py"),
+                    "--source",
+                    str(pre),
+                    "--target",
+                    str(target),
+                    "--target-stage",
+                    "ci",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+                env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            manifest = (target / "stage_manifest.tsv").read_text(encoding="utf-8")
+            self.assertIn("source_vasp_exit\t1\t", manifest)
+            self.assertIn(
+                "source_hdf5_postrun_error\tknown_vasp_images_error_29\t",
+                manifest,
+            )
+
+    def test_ci_generation_rejects_unknown_nonzero_exit(self) -> None:
+        source = WORKFLOW / "03_neb/01_tt_c"
+        if not source.is_dir():
+            self.skipTest("generated NEB inputs are unavailable")
+        with tempfile.TemporaryDirectory() as directory_name:
+            directory = Path(directory_name)
+            pre = directory / "pre"
+            shutil.copytree(source, pre)
+            populate_stage(
+                pre,
+                -821.95359478,
+                (0.060, 0.130, 0.100, 0.045),
+                stage="pre_neb",
+                forces=(0.180, 0.090),
+            )
+            status_path = pre / ".run_status"
+            status = status_path.read_text(encoding="utf-8").replace(
+                "vasp_exit=0",
+                "vasp_exit=1",
+            )
+            status_path.write_text(status, encoding="utf-8")
+            (pre / "vasp.stderr").write_text("unrelated MPI failure\n", encoding="utf-8")
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(TOOLS / "prepare_neb_stage.py"),
+                    "--source",
+                    str(pre),
+                    "--target",
+                    str(directory / "ci"),
+                    "--target-stage",
+                    "ci",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+                env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+            )
+            self.assertNotEqual(completed.returncode, 0)
+            self.assertIn("vasp_exit='1'", completed.stderr)
 
     def test_interrupted_pre_neb_can_continue_without_run_status(self) -> None:
         source = WORKFLOW / "03_neb/01_tt_c"
