@@ -38,12 +38,17 @@ v1.0-toy-diffusion-report
 
 ## SCNet结果回传
 
-首选方式是SCNet安装Git LFS并通过SSH连接私有GitHub仓库。计算通过
-`tools/check_neb.sh` 后，只提交对应阶段目录并推送；本地执行 `git pull` 和
-`git lfs pull` 即可取得原始输出。
+SCNet当前环境为Git 1.8.3.1、无Git LFS、无GitHub SSH认证，因此不把服务器改造成GitHub
+工作端。计算通过 `tools/check_neb.sh` 后，在服务器生成排除POTCAR、WAVECAR和CHGCAR的
+阶段结果包：
 
-若SCNet不能访问GitHub，不改变版本结构：在服务器生成排除POTCAR、WAVECAR和CHGCAR的
-阶段结果包及SHA-256，用SCP/WinSCP下载到本地，解压进本仓库后由本地提交并推送。
+```bash
+bash tools/package_neb_result.sh 03_neb/01_tt_c
+```
+
+CI阶段把参数改为 `03_neb/01_tt_c/ci_01`。脚本先调用阶段检查，通过后才在07目录的上一级
+生成 `.tar.gz` 和 `.sha256`；不覆盖同名包，也不递归打包下一阶段子目录。使用SCP/WinSCP
+下载两份文件到本地，校验并解压进本仓库后，由本地Git LFS提交、推送和打标签。
 
 任何计算提交前，`.run_status` 应记录实际输入所属的Git提交：
 

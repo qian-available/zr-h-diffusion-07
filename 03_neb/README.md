@@ -62,6 +62,16 @@ VTST 4.2 将 `FORCES: max atom, RMS` 写入各中间图像的 `01–04/OUTCAR`�
 
 只有TT两个阶段均通过并下载验收后，才按相同步骤执行 `02_to`。脚本不自动提交下一阶段。
 
+SCNet不直接连接GitHub。每个阶段检查通过后，在07工作流根目录生成下载包，例如：
+
+```bash
+bash tools/package_neb_result.sh 03_neb/01_tt_c
+bash tools/package_neb_result.sh 03_neb/01_tt_c/ci_01
+```
+
+结果包和对应 `.sha256` 写到07目录的上一级，不含POTCAR、WAVECAR或CHGCAR。下载到本地并
+校验后，再由本地Git/Git LFS纳入版本。
+
 ## 墙时续算
 
 若预NEB或CI因墙时停止，保留原目录并建立新目录。例如CI续算：
