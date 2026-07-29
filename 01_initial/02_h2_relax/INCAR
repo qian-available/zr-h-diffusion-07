@@ -1,0 +1,26 @@
+SYSTEM   = H2 molecular reference relaxation
+
+ISTART   = 0
+ICHARG   = 2
+ISPIN    = 1
+PREC     = Accurate
+ENCUT    = 450
+EDIFF    = 1E-8
+NELM     = 160
+ALGO     = Normal
+
+ISMEAR   = 0
+SIGMA    = 0.05
+LREAL    = .FALSE.
+LASPH    = .TRUE.
+ADDGRID  = .TRUE.
+
+IBRION   = 2
+NSW      = 100
+ISIF     = 2
+EDIFFG   = -0.005
+POTIM    = 0.20
+ISYM     = 0
+
+LWAVE    = .FALSE.
+LCHARG   = .FALSE.

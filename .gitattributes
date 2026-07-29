@@ -1,0 +1,10 @@
+# Preserve Linux-compatible line endings for SCNet scripts and VASP text inputs.
+* text=auto eol=lf
+*.png binary
+*.pdf binary
+
+# Keep large VASP evidence in the same history without putting the blobs in normal Git.
+**/OUTCAR filter=lfs diff=lfs merge=lfs -text
+**/vasprun.xml filter=lfs diff=lfs merge=lfs -text
+**/XDATCAR filter=lfs diff=lfs merge=lfs -text
+**/vasp.stdout filter=lfs diff=lfs merge=lfs -text

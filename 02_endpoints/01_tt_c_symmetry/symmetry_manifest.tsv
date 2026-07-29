@@ -1,0 +1,112 @@
+record	source_zr_index	target_zr_index	value	detail
+metric			max_mapping_residual_a	0.000000000000
+metric			ideal_h_distance_a	1.291505368765
+metric			ideal_h_basal_a	0.000000000000
+metric			ideal_h_c_a	1.291505368765
+metric			actual_h_distance_a	1.241442502312
+metric			actual_h_basal_a	0.000000000000
+metric			actual_h_c_a	1.241442502312
+metric			zr_endpoint_rms_a	0.016495894040
+metric			zr_endpoint_max_a	0.073423432080
+metric			t2_neighbor_1_a	2.017718727809
+metric			t2_neighbor_4_a	2.042244087967
+metric			t2_neighbor_5_a	3.243418674410
+zr_mapping	1	1	mapping_residual_a	2.796025043818e-15
+zr_mapping	2	6	mapping_residual_a	1.720630796196e-15
+zr_mapping	3	5	mapping_residual_a	0.000000000000e+00
+zr_mapping	4	4	mapping_residual_a	0.000000000000e+00
+zr_mapping	5	3	mapping_residual_a	8.603153980978e-16
+zr_mapping	6	2	mapping_residual_a	1.720630796196e-15
+zr_mapping	7	7	mapping_residual_a	2.796025043818e-15
+zr_mapping	8	12	mapping_residual_a	1.720630796196e-15
+zr_mapping	9	11	mapping_residual_a	0.000000000000e+00
+zr_mapping	10	10	mapping_residual_a	0.000000000000e+00
+zr_mapping	11	9	mapping_residual_a	8.603153980978e-16
+zr_mapping	12	8	mapping_residual_a	1.720630796196e-15
+zr_mapping	13	13	mapping_residual_a	2.796025043818e-15
+zr_mapping	14	18	mapping_residual_a	1.720630796196e-15
+zr_mapping	15	17	mapping_residual_a	0.000000000000e+00
+zr_mapping	16	16	mapping_residual_a	0.000000000000e+00
+zr_mapping	17	15	mapping_residual_a	8.603153980978e-16
+zr_mapping	18	14	mapping_residual_a	1.720630796196e-15
+zr_mapping	19	19	mapping_residual_a	2.796025043818e-15
+zr_mapping	20	24	mapping_residual_a	1.720630796196e-15
+zr_mapping	21	23	mapping_residual_a	0.000000000000e+00
+zr_mapping	22	22	mapping_residual_a	0.000000000000e+00
+zr_mapping	23	21	mapping_residual_a	8.603153980978e-16
+zr_mapping	24	20	mapping_residual_a	1.720630796196e-15
+zr_mapping	25	25	mapping_residual_a	2.796025043818e-15
+zr_mapping	26	30	mapping_residual_a	1.720630796196e-15
+zr_mapping	27	29	mapping_residual_a	0.000000000000e+00
+zr_mapping	28	28	mapping_residual_a	0.000000000000e+00
+zr_mapping	29	27	mapping_residual_a	8.603153980978e-16
+zr_mapping	30	26	mapping_residual_a	1.720630796196e-15
+zr_mapping	31	31	mapping_residual_a	2.796025043818e-15
+zr_mapping	32	36	mapping_residual_a	1.720630796196e-15
+zr_mapping	33	35	mapping_residual_a	0.000000000000e+00
+zr_mapping	34	34	mapping_residual_a	0.000000000000e+00
+zr_mapping	35	33	mapping_residual_a	8.603153980978e-16
+zr_mapping	36	32	mapping_residual_a	1.720630796196e-15
+zr_mapping	37	37	mapping_residual_a	2.796025043818e-15
+zr_mapping	38	42	mapping_residual_a	1.720630796196e-15
+zr_mapping	39	41	mapping_residual_a	0.000000000000e+00
+zr_mapping	40	40	mapping_residual_a	0.000000000000e+00
+zr_mapping	41	39	mapping_residual_a	8.603153980978e-16
+zr_mapping	42	38	mapping_residual_a	1.720630796196e-15
+zr_mapping	43	43	mapping_residual_a	2.796025043818e-15
+zr_mapping	44	48	mapping_residual_a	1.720630796196e-15
+zr_mapping	45	47	mapping_residual_a	0.000000000000e+00
+zr_mapping	46	46	mapping_residual_a	0.000000000000e+00
+zr_mapping	47	45	mapping_residual_a	8.603153980978e-16
+zr_mapping	48	44	mapping_residual_a	1.720630796196e-15
+zr_mapping	49	49	mapping_residual_a	2.796025043818e-15
+zr_mapping	50	54	mapping_residual_a	1.720630796196e-15
+zr_mapping	51	53	mapping_residual_a	0.000000000000e+00
+zr_mapping	52	52	mapping_residual_a	0.000000000000e+00
+zr_mapping	53	51	mapping_residual_a	8.603153980978e-16
+zr_mapping	54	50	mapping_residual_a	1.720630796196e-15
+zr_mapping	55	55	mapping_residual_a	2.796025043818e-15
+zr_mapping	56	60	mapping_residual_a	1.720630796196e-15
+zr_mapping	57	59	mapping_residual_a	0.000000000000e+00
+zr_mapping	58	58	mapping_residual_a	0.000000000000e+00
+zr_mapping	59	57	mapping_residual_a	8.603153980978e-16
+zr_mapping	60	56	mapping_residual_a	1.720630796196e-15
+zr_mapping	61	61	mapping_residual_a	2.796025043818e-15
+zr_mapping	62	66	mapping_residual_a	1.720630796196e-15
+zr_mapping	63	65	mapping_residual_a	0.000000000000e+00
+zr_mapping	64	64	mapping_residual_a	0.000000000000e+00
+zr_mapping	65	63	mapping_residual_a	8.603153980978e-16
+zr_mapping	66	62	mapping_residual_a	1.720630796196e-15
+zr_mapping	67	67	mapping_residual_a	2.796025043818e-15
+zr_mapping	68	72	mapping_residual_a	1.720630796196e-15
+zr_mapping	69	71	mapping_residual_a	0.000000000000e+00
+zr_mapping	70	70	mapping_residual_a	0.000000000000e+00
+zr_mapping	71	69	mapping_residual_a	8.603153980978e-16
+zr_mapping	72	68	mapping_residual_a	1.720630796196e-15
+zr_mapping	73	73	mapping_residual_a	2.796025043818e-15
+zr_mapping	74	78	mapping_residual_a	1.720630796196e-15
+zr_mapping	75	77	mapping_residual_a	0.000000000000e+00
+zr_mapping	76	76	mapping_residual_a	0.000000000000e+00
+zr_mapping	77	75	mapping_residual_a	8.603153980978e-16
+zr_mapping	78	74	mapping_residual_a	1.720630796196e-15
+zr_mapping	79	79	mapping_residual_a	2.796025043818e-15
+zr_mapping	80	84	mapping_residual_a	1.720630796196e-15
+zr_mapping	81	83	mapping_residual_a	0.000000000000e+00
+zr_mapping	82	82	mapping_residual_a	0.000000000000e+00
+zr_mapping	83	81	mapping_residual_a	8.603153980978e-16
+zr_mapping	84	80	mapping_residual_a	1.720630796196e-15
+zr_mapping	85	85	mapping_residual_a	2.796025043818e-15
+zr_mapping	86	90	mapping_residual_a	1.720630796196e-15
+zr_mapping	87	89	mapping_residual_a	0.000000000000e+00
+zr_mapping	88	88	mapping_residual_a	0.000000000000e+00
+zr_mapping	89	87	mapping_residual_a	8.603153980978e-16
+zr_mapping	90	86	mapping_residual_a	1.720630796196e-15
+zr_mapping	91	91	mapping_residual_a	2.796025043818e-15
+zr_mapping	92	96	mapping_residual_a	1.720630796196e-15
+zr_mapping	93	95	mapping_residual_a	0.000000000000e+00
+zr_mapping	94	94	mapping_residual_a	0.000000000000e+00
+zr_mapping	95	93	mapping_residual_a	8.603153980978e-16
+zr_mapping	96	92	mapping_residual_a	1.720630796196e-15
+source			t_poscar_sha256	832d12f0d12d9c041bbfed42363eb45f0c531d457cbcf390baea18ed83eba774
+source			t_contcar_sha256	409a48cf8dd2aa79b3d5690377cb11f6bd6942eddd2e753302d1c4e5c183568f
+operation			fractional_transform	x'=x; y'=y; z'=(7/6-z) mod 1

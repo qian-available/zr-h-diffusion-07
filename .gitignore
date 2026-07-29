@@ -1,0 +1,12 @@
+# VASP licensed potential: keep only its identity/hash in tracked manifests.
+**/POTCAR
+**/POTCAR.gz
+**/POTCAR.Z
+
+# Large restart files; current NEB inputs disable their generation.
+**/WAVECAR
+**/CHGCAR
+
+# Regenerable Python cache.
+**/__pycache__/
+*.pyc

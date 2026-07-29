@@ -1,0 +1,24 @@
+SYSTEM   = Zr96 4x4x3 DCU static reference
+
+ISTART   = 0
+ICHARG   = 2
+ISPIN    = 1
+PREC     = Accurate
+ENCUT    = 450
+EDIFF    = 1E-6
+NELM     = 160
+ALGO     = Normal
+
+ISMEAR   = 1
+SIGMA    = 0.20
+LREAL    = Auto
+LASPH    = .TRUE.
+ADDGRID  = .TRUE.
+
+IBRION   = -1
+NSW      = 0
+ISIF     = 2
+ISYM     = 2
+
+LWAVE    = .FALSE.
+LCHARG   = .FALSE.

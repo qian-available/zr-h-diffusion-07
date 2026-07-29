@@ -1,0 +1,26 @@
+SYSTEM   = Zr96H tetrahedral-site 4x4x3 DCU relaxation
+
+ISTART   = 0
+ICHARG   = 2
+ISPIN    = 1
+PREC     = Accurate
+ENCUT    = 450
+EDIFF    = 1E-6
+NELM     = 160
+ALGO     = Normal
+
+ISMEAR   = 1
+SIGMA    = 0.20
+LREAL    = Auto
+LASPH    = .TRUE.
+ADDGRID  = .TRUE.
+
+IBRION   = 2
+NSW      = 200
+ISIF     = 2
+EDIFFG   = -0.01
+POTIM    = 0.30
+ISYM     = 0
+
+LWAVE    = .FALSE.
+LCHARG   = .FALSE.
