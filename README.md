@@ -4,7 +4,7 @@
 `job.slurm`，不使用 Python 总控脚本。
 
 版本管理仅覆盖本目录，采用私有GitHub仓库、单一 `main` 分支和阶段标签；规则见
-[`doc/VERSION_CONTROL.md`](doc/VERSION_CONTROL.md)。
+[`VERSION_CONTROL.md`](VERSION_CONTROL.md)。
 
 当前简化路线为：
 
@@ -320,4 +320,4 @@ NEB投影力从各中间图像 `OUTCAR` 的 `FORCES: max atom, RMS` 读取，并
 
 服务器固定环境见
 [`doc/SCNet_server_configuration.md`](doc/SCNet_server_configuration.md)，维护与下载规则见
-[`doc/SCNet_project_maintenance.md`](doc/SCNet_project_maintenance.md)。
+[`VERSION_CONTROL.md`](VERSION_CONTROL.md)。
