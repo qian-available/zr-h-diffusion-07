@@ -12,11 +12,6 @@
 `tools/prepare_neb_stage.py` 才能从4个 `CONTCAR` 建立子目录 `ci_01/`，其中使用
 `EDIFFG=-0.03 eV/A`、`LCLIMB=.TRUE.`。
 
-截至2026-07-29，TT预NEB（Job `62213597`）已完成29个离子步。四幅中间图像的最终
-NEB投影力为 `0.094234/0.092931/0.092919/0.094215 eV/A`，最大值
-`0.094234 eV/A`，通过 `0.10 eV/A` 预弛豫门槛。下一步是从这些 `CONTCAR` 建立
-`01_tt_c/ci_01`；TO尚未提交。
-
 ## 为什么选择 TT_c 和 TO
 
 [Zhang、Jiang与Bai对α-Zr-H扩散网络的DFT+KMC研究](https://doi.org/10.1038/srep41033)
@@ -47,6 +42,25 @@ NEB改进切线和CI算法的原始方法依据为：
 - [Henkelman and Jónsson, improved tangent NEB, *J. Chem. Phys.* 113 (2000) 9978](https://doi.org/10.1063/1.1323224)
 - [Henkelman, Uberuaga and Jónsson, climbing-image NEB, *J. Chem. Phys.* 113 (2000) 9901](https://doi.org/10.1063/1.1329672)
 
+## VTST官方脚本的图像距离复核
+
+SCNet上的VTST官方 `dist.pl` 已对TT CI目录的6幅POSCAR做只读检查。它对所有原子采用
+周期性最小镜像位移，并报告整体RSS结构距离；结果与本地独立核验逐位一致：
+
+| 比较 | 距离（A） |
+| --- | ---: |
+| `00 → 05` | `1.25191951837223` |
+| `00 → 01` | `0.259825314117995` |
+| `01 → 02` | `0.257682862474448` |
+| `02 → 03` | `0.256253978894787` |
+| `03 → 04` | `0.255454023789007` |
+| `04 → 05` | `0.255351641504885` |
+
+五段相邻距离均约为 `0.255–0.260 A`，没有出现某一段异常集中，因此当前4幅中间图像
+在几何上分布均匀，不需要仅因该检查增加到6幅。`dist.pl` 只读POSCAR，不会修改输入或
+启动VASP。它的全体系RSS距离不能与 `tools/analyze_neb.py` 中仅跟踪H原子的累计反应
+坐标混用；后者用于最终能量路径作图。更多工具边界见 [`../tools/README.md`](../tools/README.md)。
+
 ## SCNet执行顺序
 
 服务器二进制已经只读确认包含 `VTST 4.2` 与 `LCLIMB`，并锁定：
@@ -70,7 +84,7 @@ sbatch job.slurm
 均可识别，并按解压后的内容校验 SHA-256。不要改用公共
 `psudopotential/.../Zr_sv/POTCAR.Z`，该文件是不同的2000版势。
 
-结束后回到工作流根目录检查并生成CI阶段：
+预NEB结束后回到工作流根目录检查并生成CI阶段；目标目录已存在时不要重复运行：
 
 ```bash
 bash tools/check_neb.sh --stage pre 01_tt_c
@@ -78,11 +92,25 @@ python tools/prepare_neb_stage.py \
   --source 03_neb/01_tt_c \
   --target 03_neb/01_tt_c/ci_01 \
   --target-stage ci
+```
+
+CI阶段的服务器目录约定为：
+
+```text
+/work/home/liuzhixiao/Zr-ckj/07_h_diffusion_quickstart/03_neb/01_tt_c/ci_01/
+```
+
+只同步仓库中的CI输入与manifest，不上传POTCAR；到服务器后再运行：
+
+```bash
+cd /work/home/liuzhixiao/Zr-ckj/07_h_diffusion_quickstart
 bash tools/assemble_neb_potcars.sh 03_neb/01_tt_c/ci_01
 cd 03_neb/01_tt_c/ci_01
 sha256sum -c inputs.sha256
 sbatch job.slurm
 ```
+
+SCNet不是Git工作端，已确认的文档和输入应由本地Git同步到私有仓库 `origin/main`。
 
 CI结束后检查：
 
@@ -142,8 +170,7 @@ python tools/analyze_neb.py \
 ```
 
 若有 `ci_02`，对应参数改为最后通过的CI目录。势垒只读取最终CI能量；收敛表和力图同时连接
-普通NEB与CI两段。截至2026-07-29，TT普通NEB预弛豫已经通过验收；CI尚未完成，因此当前
-仍没有可报告的最终扩散势垒。
+普通NEB与CI两段。
 
 本路线仍是 `450 eV + Gamma 4x4x3 + 4图像` 玩具任务，不包含6图像、ZPE、有限尺寸或
 Zr-H专门参数收敛。预计不含排队：TT两阶段约30–60小时，TO约45–90小时。

@@ -67,5 +67,10 @@ The SCNet DCU executable was subsequently confirmed to contain VTST 4.2 and `LCL
 run as an ordinary-NEB pre-relaxation to `0.10 eV/A`, followed by an independently prepared CI-NEB
 stage to `0.03 eV/A`. See `03_neb/README.md`; no stage is submitted automatically.
 
+The required official VTST Perl helpers are present and pass syntax checks. `dist.pl` independently
+confirmed a `1.25191951837223 A` all-atom endpoint RSS distance and nearly uniform adjacent-image
+distances of about `0.255–0.260 A`. These helper scripts do not run CI-NEB; the VTST-linked VASP
+executable performs the actual calculation.
+
 This reduced setting is intended for workflow demonstration and does not establish converged Zr-H defect or
 diffusion energetics.

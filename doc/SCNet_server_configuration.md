@@ -208,10 +208,8 @@ compiler/dtk/22.10
 
 模板申请 `--gres=dcu:4`，生成4个 Intel MPI 进程，分别通过 `HIP_VISIBLE_DEVICES=0..3`
 绑定一块 DCU，并用 `numactl` 绑定相应 NUMA 节点。每个进程设置 `OMP_NUM_THREADS=6`。
-该 DCU 组合已经由本项目的新 Zr96、T、O 作业验证。NEB按
-`TT预NEB→TT CI→TO预NEB→TO CI` 顺序提交，每次只推进一个阶段。
-
-NEB 资源是后续阶段预设，尚未提交生产作业。
+该 DCU 组合已经由本项目的新 Zr96、T、O 作业验证。NEB各阶段使用相同资源，每次只提交
+一个阶段；阶段顺序和当前粗略进度统一见项目根目录 `README.md`。
 
 每个初始任务从自己的计算目录执行：
 
@@ -244,6 +242,21 @@ slurm-<jobid>.err
 /work/home/liuzhixiao/vtstscripts-1033
 ```
 
+同日对本项目所需的辅助环境做了只读检查：
+
+```text
+Perl:       5.16.3
+Python 2:   2.7.5
+Python 3:   3.6.8
+NumPy:      1.19.5（Python 3）
+gnuplot:    未安装
+```
+
+`dist.pl`、`nebbarrier.pl`、`nebef.pl`、`nebresults.pl`、`nebconverge.pl`、
+`nebspline.pl`、`nebmovie.pl` 和 `pos2con.pl` 均存在；本项目所需的VTST官方Perl脚本
+语法检查通过。`gnuplot` 仅影响部分可选绘图流程，不影响VASP执行CI-NEB，也不影响
+`dist.pl` 的结构距离检查。本地Python工具以Python 3和NumPy运行，不依赖服务器Python 2。
+
 2026-07-29 已对实际DCU二进制进行只读检查：
 
 ```text
@@ -263,6 +276,24 @@ SHA-256、VTST 4.2和LCLIMB标记，变化时停止。当前图像仍由
 `tools/prepare_neb_stage.py` 从4个 `CONTCAR` 建立
 `LCLIMB=.TRUE.`、`EDIFFG=-0.03 eV/A` 的CI阶段。
 
+VTST Perl脚本是辅助检查和后处理层；真正执行改进切线、弹簧力和climbing image算法的是
+上述已链接VTST 4.2的 `vasp_std`。本项目的CI输入仍由本地工具从已验收 `CONTCAR` 显式
+生成，不以 `nebmake.pl` 替换已有的数据血缘。
+
+官方 `dist.pl` 对TT CI六幅POSCAR的全体系最小镜像RSS距离核验为：
+
+```text
+00 -> 05  1.25191951837223 A
+00 -> 01  0.259825314117995 A
+01 -> 02  0.257682862474448 A
+02 -> 03  0.256253978894787 A
+03 -> 04  0.255454023789007 A
+04 -> 05  0.255351641504885 A
+```
+
+这些数值与本地独立计算逐位一致。五段相邻距离均匀，因此当前4幅中间图像无需仅因几何
+分布增加图像数。`dist.pl` 只读取结构，不修改POSCAR、不生成输入，也不启动VASP。
+
 ## 9. 已验证与未确认事项
 
 已验证：
@@ -273,6 +304,7 @@ SHA-256、VTST 4.2和LCLIMB标记，变化时停止。当前图像仍由
 - H2 首次生产任务正常结束，电子和离子弛豫均收敛。
 - 新 `4x4x3` DCU Zr96、T、O 均已正常结束，T/O 达到离子收敛门槛。
 - 实际DCU `vasp_std` 的SHA-256已记录，并确认包含VTST 4.2与CI-NEB支持。
+- 本项目所需的VTST官方Perl脚本齐全且语法检查通过，`dist.pl` 已实际复核TT CI图像距离。
 
 尚未确认：
 

@@ -1,0 +1,13 @@
+key	value	unit
+path	TT_c	
+images	4	
+start_e0_ev	-821.953594780000	eV
+end_e0_ev	-821.953594780000	eV
+endpoint_delta_e_ev	0.000000000000	eV
+h_endpoint_distance_a	1.241442502312	A
+h_endpoint_basal_a	0.000000000000	A
+h_endpoint_c_a	1.241442502312	A
+source_t_contcar_sha256	409a48cf8dd2aa79b3d5690377cb11f6bd6942eddd2e753302d1c4e5c183568f	
+source_end_contcar_sha256	symmetry:409a48cf8dd2aa79b3d5690377cb11f6bd6942eddd2e753302d1c4e5c183568f	
+endpoint_00_poscar_sha256	961b231970adf78ed60902221419e50b9585da3f58b638e400221f6fb57523e4	
+endpoint_05_poscar_sha256	a9af1f5831a8476c6d1239250caa7a7ca3bc61502c1a880368c9a45b8a9c9b27	

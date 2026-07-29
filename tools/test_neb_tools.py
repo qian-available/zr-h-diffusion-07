@@ -155,7 +155,11 @@ class AnalyzerEndToEndTest(unittest.TestCase):
             final_stages: dict[str, Path] = {}
             for path_name, (start, relative) in profiles.items():
                 target = result_root / path_name
-                shutil.copytree(source / path_name, target)
+                shutil.copytree(
+                    source / path_name,
+                    target,
+                    ignore=shutil.ignore_patterns("ci_*", "pre_restart_*"),
+                )
                 populate_stage(
                     target,
                     start,
