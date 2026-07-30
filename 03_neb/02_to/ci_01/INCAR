@@ -1,0 +1,31 @@
+SYSTEM = Zr96H TO CI-NEB, four intermediate images
+
+ISTART = 0
+ICHARG = 2
+ISPIN  = 1
+PREC   = Accurate
+ENCUT  = 450
+EDIFF  = 1E-6
+NELM   = 160
+ALGO   = Normal
+
+ISMEAR = 1
+SIGMA  = 0.20
+LREAL  = Auto
+LASPH  = .TRUE.
+ADDGRID = .TRUE.
+
+IBRION = 3
+SMASS  = 2
+POTIM  = 0.10
+NSW    = 300
+EDIFFG = -0.03
+ISIF   = 2
+ISYM   = 0
+
+IMAGES = 4
+SPRING = -5
+LCLIMB = .TRUE.
+
+LWAVE  = .FALSE.
+LCHARG = .FALSE.

@@ -1,0 +1,13 @@
+key	value	unit
+path	TO	
+images	4	
+start_e0_ev	-821.953594780000	eV
+end_e0_ev	-821.890690780000	eV
+endpoint_delta_e_ev	0.062904000000	eV
+h_endpoint_distance_a	1.985149914067	A
+h_endpoint_basal_a	1.868389100295	A
+h_endpoint_c_a	-0.670777423008	A
+source_t_contcar_sha256	409a48cf8dd2aa79b3d5690377cb11f6bd6942eddd2e753302d1c4e5c183568f	
+source_end_contcar_sha256	e43f06796230dc0f0e0819d02b85b6c182e2882e81ba7de6bce2d4b7131d0890	
+endpoint_00_poscar_sha256	2349432e66e97ccc7402e9c8c5f49de819dbaec9ed86deb50271b0fb376212c9	
+endpoint_05_poscar_sha256	910b02b7533f3e9c1bcddf385e777bacb4d61c987d57d51d1b6110bd35a04c50	
