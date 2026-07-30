@@ -179,6 +179,19 @@ def stage_job(path_name: str, target_stage: str) -> str:
     settings = STAGE_SETTINGS[target_stage]
     text = JOB_TEMPLATE.replace("__JOB_NAME__", f"zrh_{path_name}_{target_stage}")
     if target_stage == "ci":
+        ci_nodes = len(INTERMEDIATES)
+        ci_tasks_per_node = 32
+        ci_tasks = ci_tasks_per_node * ci_nodes
+        # Four intermediate images are assigned four consecutive MPI/DCU ranks
+        # each.  The config file lists all four devices of one node before the
+        # next host, matching VASP's node-filled rank-layout expectation.  Keep
+        # the only layout that has started successfully on this system: a full
+        # 32-CPU allocation per node.  A 24-CPU-per-node attempt failed in the
+        # MPI launcher before VASP started; its exact affinity failure mechanism
+        # has not yet been isolated.
+        text = text.replace("#SBATCH -N 1", f"#SBATCH -N {ci_nodes}", 1)
+        text = text.replace("#SBATCH -n 32", f"#SBATCH -n {ci_tasks}", 1)
+        text = text.replace("expected_nodes=1", f"expected_nodes={ci_nodes}", 1)
         text = text.replace('stage="pre_neb"', 'stage="ci_neb"')
         text = text.replace('force_limit="0.10"', 'force_limit="0.03"')
         text = text.replace("echo \"lclimb=false\"", "echo \"lclimb=true\"")

@@ -15,3 +15,9 @@
 # Regenerable Python cache.
 **/__pycache__/
 *.pyc
+
+# Local paper PDFs and extracted figures used for literature review.
+/literature_materials/
+
+# Temporary downloads.
+/tmp/

@@ -136,6 +136,8 @@ class AnalyzerEndToEndTest(unittest.TestCase):
             self.assertIn("LCLIMB = .FALSE.", incar)
         self.assertIn('stage="pre_neb"', JOB_TEMPLATE)
         self.assertIn('force_limit="0.10"', JOB_TEMPLATE)
+        self.assertIn("#SBATCH -N 1", JOB_TEMPLATE)
+        self.assertIn("expected_nodes=1", JOB_TEMPLATE)
         self.assertIn('"${image}/OUTCAR"', JOB_TEMPLATE)
         self.assertNotIn("END {print value}' vasp.stdout", JOB_TEMPLATE)
         self.assertIn("known_vasp_images_error_29", JOB_TEMPLATE)
@@ -187,6 +189,14 @@ class AnalyzerEndToEndTest(unittest.TestCase):
                 self.assertEqual(completed.returncode, 0, completed.stderr)
                 self.assertIn("EDIFFG = -0.03", (ci_target / "INCAR").read_text(encoding="utf-8"))
                 self.assertIn("LCLIMB = .TRUE.", (ci_target / "INCAR").read_text(encoding="utf-8"))
+                ci_job = (ci_target / "job.slurm").read_text(encoding="utf-8")
+                self.assertIn("#SBATCH -N 4", ci_job)
+                self.assertIn("#SBATCH -n 128", ci_job)
+                self.assertNotIn("#SBATCH --ntasks-per-node=24", ci_job)
+                self.assertIn("#SBATCH --gres=dcu:4", ci_job)
+                self.assertIn("expected_nodes=4", ci_job)
+                self.assertIn("ranks_per_image=$((total_ranks / image_count))", ci_job)
+                self.assertNotIn("NCORE =", (ci_target / "INCAR").read_text(encoding="utf-8"))
                 self.assertFalse((ci_target / "POTCAR").exists())
                 self.assertEqual(
                     (target / "00/POSCAR").read_bytes(),

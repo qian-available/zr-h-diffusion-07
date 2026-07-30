@@ -94,6 +94,26 @@ python tools/prepare_neb_stage.py \
   --target-stage ci
 ```
 
+新生成的CI作业使用4节点、每节点32 CPU task和4块DCU，共128 CPU task及16个MPI/DCU
+rank。对当前
+`IMAGES=4`，即每图像4 rank/4 DCU；host-major configfile让一个图像的4个rank留在同一
+节点。这里增加的是Slurm节点和DCU资源，不修改INCAR中的图像数，也不设置
+`NCORE/NPAR/KPAR`。相比普通NEB实际的每像1 DCU，这一配置优先降低CI墙时，但资源消耗
+约为4倍且可能增加排队时间。16个rank的OpenMP工作线程合计为96，但旧版Intel MPI/
+`numactl` 启动器还显式使用4个NUMA节点。TO `ci_02` 将申请缩为每节点24、总96 CPU后，
+Job `62474917` 在四节点同时启动段错误，且没有进入VASP主体。该单次A/B结果强烈指向资源
+集合与启动绑定层，但尚未证明精确触发机制；因此后续恢复已经实际启动并完成离子步的
+每节点32、总128 CPU布局。若要进一步缩减CPU，必须先单独重构并基准测试启动绑定方式，
+不能只改 `#SBATCH -n`。TO `ci_03` 已按该回退配置提交为Job `62475824`，结果尚待验收。
+首次跨节点提交后检查：
+
+```bash
+grep -E 'running on|each image running' vasp.stdout
+```
+
+预期包含 `running on 16 total cores` 和 `each image running on 4 cores`。若不符合，立即取消
+作业并保留输出诊断，不继续消耗节点时。SCNet上的实际跨节点加速比仍需本次CI作业验证。
+
 CI阶段的服务器目录约定为：
 
 ```text

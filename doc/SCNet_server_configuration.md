@@ -195,7 +195,8 @@ Zr96H 的 POTCAR 顺序固定为 `Zr_sv + H`。H2、T 位和 O 位任务使用�
 | Zr96 `4x4x3` static | 1 | 32 | 4 | 24 h | `xahdnormal` |
 | Zr96H T/O `4x4x3` relax | 1 | 32 | 4 | 24 h | `xahdnormal` |
 | H2 relax | 1 | 4 | 0 | 已完成 | `xahcnormal` |
-| TT_c/TO 预NEB或CI-NEB单阶段 | 1 | 32 | 4 | 5 d | `xahdnormal` |
+| TT_c/TO 普通NEB预弛豫 | 1 | 32 | 4（总计） | 5 d | `xahdnormal` |
+| 新生成的CI-NEB阶段 | 4 | 128（32/节点） | 4/节点，16总计 | 5 d | `xahdnormal` |
 
 服务器现有 DCU 模板使用：
 
@@ -206,10 +207,27 @@ compiler/dtk/22.10
 /work/home/liuzhixiao/software/dcu-port-2Feb2023-all/env.sh
 ```
 
-模板申请 `--gres=dcu:4`，生成4个 Intel MPI 进程，分别通过 `HIP_VISIBLE_DEVICES=0..3`
-绑定一块 DCU，并用 `numactl` 绑定相应 NUMA 节点。每个进程设置 `OMP_NUM_THREADS=6`。
-该 DCU 组合已经由本项目的新 Zr96、T、O 作业验证。NEB各阶段使用相同资源，每次只提交
-一个阶段；阶段顺序和当前粗略进度统一见项目根目录 `README.md`。
+模板的单节点模式申请 `--gres=dcu:4`，生成4个 Intel MPI 进程，分别通过
+`HIP_VISIBLE_DEVICES=0..3` 绑定一块 DCU，并用 `numactl` 绑定相应 NUMA 节点。每个进程
+设置 `OMP_NUM_THREADS=6`。该4-DCU单构型组合已经由本项目的新Zr96、T、O作业验证。
+
+TO CI首次作业 `62470978` 使用 `-N 4 -n 128 --gres=dcu:4`，成功启动并完成1个离子步，
+随后为尝试缩减CPU申请而于2026-07-31主动取消。续算 `ci_02` 使用
+`-N 4 -n 96 --ntasks-per-node=24 --gres=dcu:4`，Job `62474917` 在7秒内于四个节点的
+启动进程同时段错误，`vasp.stdout` 为空，未进入VASP数值计算。`ci_02` 的内部POSCAR是
+从 `ci_01` 已完成离子步的CONTCAR正常续接而来；INCAR、KPOINTS、POTCAR、VASP可执行文件
+和16行Intel MPI/DCU映射保持不变。由于故障发生在VASP启动之前，现有A/B证据强烈指向
+Slurm CPU集合、旧版Intel MPI/Hydra与 `numactl` 绑定的兼容问题，但尚不能由一次失败确定
+精确触发机制。后续恢复目前唯一实际启动成功的
+`-N 4 -n 128 --gres=dcu:4`，即每节点保留完整32 CPU资源布局；这里的128不是VASP实际
+创建128个MPI rank，而是Slurm资源申请，启动器仍逐节点连续列出4个DCU rank，总计16
+rank。TO `ci_03` 已按该配置提交为Job `62475824`，其启动与收敛结果尚待验收。
+`IMAGES=4` 后为每图像4 rank，并让每个图像的高频FFT通信留在单节点内。脚本启动前
+检查实际节点数为4、rank总数能被图像数整除，并在 `.run_status` 记录节点、总rank、每像
+rank和总DCU数。该映射符合VASP并行模型；SCNet上的跨节点加速比仍需观察，因此首次提交
+后必须核查 `vasp.stdout` 的
+`running on 16 total cores`、`each image running on 4 cores`，并观察首个电子步后再决定是否
+保持该资源。INCAR仍不设置 `NCORE/NPAR/KPAR`，避免同时引入未经基准测试的并行变量。
 
 每个初始任务从自己的计算目录执行：
 
