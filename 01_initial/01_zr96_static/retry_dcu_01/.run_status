@@ -1,0 +1,7 @@
+slurm_job_id=62149576
+vasp_exit=0
+normal_termination=yes
+electronic_convergence=yes
+accelerator=dcu:4
+vasp_exe=/work/home/liuzhixiao/software/dcu-port-2Feb2023-all/bin/vasp_std
+finished_at=2026-07-28T18:11:10+0800

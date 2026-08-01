@@ -1,0 +1,4 @@
+-host c13r3n02 -env HIP_VISIBLE_DEVICES 0 -env OMP_NUM_THREADS 6 -n 1 numactl --cpunodebind=0 --membind=0 /work/home/liuzhixiao/software/dcu-port-2Feb2023-all/bin/vasp_std
+-host c13r3n02 -env HIP_VISIBLE_DEVICES 1 -env OMP_NUM_THREADS 6 -n 1 numactl --cpunodebind=1 --membind=1 /work/home/liuzhixiao/software/dcu-port-2Feb2023-all/bin/vasp_std
+-host c13r3n02 -env HIP_VISIBLE_DEVICES 2 -env OMP_NUM_THREADS 6 -n 1 numactl --cpunodebind=2 --membind=2 /work/home/liuzhixiao/software/dcu-port-2Feb2023-all/bin/vasp_std
+-host c13r3n02 -env HIP_VISIBLE_DEVICES 3 -env OMP_NUM_THREADS 6 -n 1 numactl --cpunodebind=3 --membind=3 /work/home/liuzhixiao/software/dcu-port-2Feb2023-all/bin/vasp_std

@@ -1,0 +1,5 @@
+case	status	nions	e0_ev	max_force_ev_a
+01_zr96_static/retry_dcu_01	PASS	96	-818.11976349	0.00000000
+02_h2_relax	PASS	2	-6.76804846	0.00328400
+03_t_relax/retry_dcu_01	PASS	97	-821.95359478	0.00874278
+04_o_relax/retry_dcu_01	PASS	97	-821.89069078	0.00420013

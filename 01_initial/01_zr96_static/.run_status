@@ -1,0 +1,5 @@
+slurm_job_id=62040127
+vasp_exit=0
+normal_termination=yes
+electronic_convergence=yes
+finished_at=2026-07-28T06:19:03+0800
