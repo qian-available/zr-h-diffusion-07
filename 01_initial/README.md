@@ -1,31 +1,11 @@
-# Zr96-H 初始批次当前进度
+# Zr96-H 初始批次
 
-**更新日期：** 2026-07-28  
-**当前阶段：** 初始批次和 T/O 分析已完成；对称T2及TT_c/TO普通NEB预弛豫输入已生成，尚未提交  
-**服务器项目：** `/work/home/liuzhixiao/Zr-ckj/07_h_diffusion_quickstart/`  
-**本地结果归档：** [`../../07_H_diffussion_result/ZrH07_initial_results_20260728/`](../../07_H_diffussion_result/ZrH07_initial_results_20260728/)  
+本目录保存 Zr96、H2 以及 Zr96H 的 T/O 间隙位初始计算输入、同步后的原始输出和派生分析。
+本页聚焦 2026-07-28 初始批次；后续 CI-NEB 正式结果见仓库根目录 README。
 
-## 1. 本地归档与完整性
+## 采用的数据
 
-超算结果包已下载并解压，压缩包为：
-
-```text
-07_H_diffussion_result/ZrH07_initial_results_20260728.tar.gz
-```
-
-本地重新计算的 SHA-256 与随包校验文件完全一致：
-
-```text
-03876d4375003ceabe67ea7df84903e0f43a6ad1d15b179c302ecc1e447e6bc9
-```
-
-归档包含各任务的 `INCAR`、`POSCAR`、`KPOINTS`、`OUTCAR`、`OSZICAR`、`CONTCAR`、
-`vasprun.xml`、`.run_status` 和 Slurm/VASP 日志，不包含受许可约束的 POTCAR，也不包含
-WAVECAR、CHGCAR 等非本阶段分析必需的大文件。
-
-## 2. 当前采用的计算集合
-
-当前玩具任务的溶解能必须使用同一套新参数的以下数据：
+当前热力学组合固定为：
 
 ```text
 Zr96：     01_zr96_static/retry_dcu_01
@@ -34,42 +14,40 @@ Zr96H(T)： 03_t_relax/retry_dcu_01
 Zr96H(O)： 04_o_relax/retry_dcu_01
 ```
 
-新 Zr96、T 和 O 统一采用：
+## 新旧参数与能量血缘
 
-```text
-ENCUT = 450 eV
-EDIFF = 1E-6
-LREAL = Auto
-KPOINTS = Gamma-centered 4x4x3
-```
+旧 CPU 批次采用更严格但显著更慢的 `5×5×4`、`EDIFF=1E-7`、`LREAL=.FALSE.`。其中
+Zr96 static（Job `62040127`）完成并得到 `E0=-818.00059399 eV`，可作为高精度历史参考；
+T/O relax（Jobs `62040731/62040755`）因运行过慢停止，原输出保留但不视为完成结果。
 
-实际 `OUTCAR` 显示 Zr96 static 有 8 个不可约 k 点，T/O relax 各有 26 个不可约 k 点。
-这是 Zr96 使用 `ISYM=2`、T/O 使用 `ISYM=0` 所导致的正常对称性差异，不代表三者使用了
-不同的显式 k 网格。`LREAL=Auto` 在实际运行参数中显示为 `LREAL=T`，也是预期行为。
+新 DCU 批次将 Zr96、T 和 O 统一为 `ENCUT=450 eV`、`EDIFF=1E-6`、`LREAL=Auto` 和
+Gamma-centered `4×4×3`：
 
-旧 CPU `01_zr96_static`（Job `62040127`）也已正常完成并保存在结果归档中，其设置为
-`5x5x4`，最终 `energy(sigma->0)=-818.00059399 eV`。它可作为旧高精度记录，但不能与新
-`4x4x3` T/O 混合计算当前溶解能。当前热力学组合只使用新 Zr96 retry。
+- T/O 执行固定晶胞 relax，正式端点能量取各自最后一个 `energy(sigma->0)`；
+- Zr96 使用 `IBRION=-1、NSW=0、ISYM=2` 只做同设置 static，为新 T/O 提供一致的宿主能量；
+- 没有再做 T/O 的 `5×5×4` final static；
+- 旧 `5×5×4` Zr96 与新 `4×4×3` T/O 不能混合计算当前溶解能。
 
-## 3. 任务验收结果
+新旧 Zr96 的 E0 相差约 `0.11917 eV`。这不是旧 CPU 结果错误，而是 k 网格、电子阈值和
+实空间投影设置不同造成的绝对能量差；因此必须用新 Zr96 static 与新 T/O 配套。
 
-服务器运行 [`../tools/check_initial.sh`](../tools/check_initial.sh) 后四项均为 `PASS`：
+H2 是独立分子化学势参考，采用 Gamma-only、`EDIFF=1E-8`、`LREAL=.FALSE.` 的既有已收敛
+结果，Job `62040677` 在 2 步内完成，`E0=-6.76804846 eV`。它不因周期性 Zr96/T/O 改用
+DCU 和 `4×4×3` 网格而重复计算。
 
-| 任务 | Job ID | 离子步 | 最终 E0 (eV) | 最大力 (eV/A) | 状态 |
+## 验收结果
+
+| 任务 | Job ID | 离子步 | 最终 E0 (eV) | 最大力 (eV/Å) | 状态 |
 | --- | ---: | ---: | ---: | ---: | --- |
-| 新 Zr96 `4x4x3` static | `62149576` | 不适用 | -818.11976349 | 0.00000000 | 正常结束，电子收敛 |
-| H2 relax | `62040677` | 2 | -6.76804846 | 0.00328400 | 正常结束，电子/离子收敛 |
-| T 初态 Zr96H relax | `62134983` | 13 | -821.95359478 | 0.00874278 | 正常结束，电子/离子收敛 |
-| O 初态 Zr96H relax | `62148446` | 12 | -821.89069078 | 0.00420013 | 正常结束，电子/离子收敛 |
+| Zr96 static | `62149576` | — | -818.11976349 | 0.00000000 | 电子收敛 |
+| H2 relax | `62040677` | 2 | -6.76804846 | 0.00328400 | 电子/离子收敛 |
+| T relax | `62134983` | 13 | -821.95359478 | 0.00874278 | 电子/离子收敛 |
+| O relax | `62148446` | 12 | -821.89069078 | 0.00420013 | 电子/离子收敛 |
 
-所有 `OUTCAR` 均含 `General timing and accounting`。H2、T、O 还含
-`reached required accuracy`。T/O 最大力均低于本路线的 `0.01 eV/A` 验收门槛；其中 T 的
-`0.00874278 eV/A` 已通过，但比较接近门槛。
+服务器生成的原始摘要已同步为 [`initial_summary.tsv`](initial_summary.tsv)。各计算目录保留
+输入、`.run_status`、Slurm/VASP 日志和科学输出；POTCAR、重启文件及 HDF5 输出不进入 Git。
 
-服务器生成的原始汇总见
-[`../../07_H_diffussion_result/ZrH07_initial_results_20260728/07_h_diffusion_quickstart/01_initial/initial_summary.tsv`](../../07_H_diffussion_result/ZrH07_initial_results_20260728/07_h_diffusion_quickstart/01_initial/initial_summary.tsv)。
-
-## 4. 当前能量学结果
+## 能量与结构
 
 采用最终 `energy(sigma->0)`，溶解能定义为：
 
@@ -77,45 +55,30 @@ KPOINTS = Gamma-centered 4x4x3
 Esol(site) = E0[Zr96H(site)] - E0[Zr96] - 1/2 E0[H2]
 ```
 
-得到：
+| 位点 | Esol (eV/H) | 相对 T 能量 (eV) | 最近邻配位 |
+| --- | ---: | ---: | ---: |
+| T | -0.44980706 | 0.00000000 | 4 |
+| O | -0.38690306 | +0.06290400 | 6 |
 
-| 初始位标签 | Esol (eV/H) | 相对 T 的能量 (eV) |
-| --- | ---: | ---: |
-| T | -0.44980706 | 0.00000000 |
-| O | -0.38690306 | +0.06290400 |
+T 末态最近四个 Zr-H 距离为 `2.01772–2.04224 Å`；O 末态最近六个约为 `2.29655 Å`。
+两者 H 位点相距 `1.98514991 Å`。这些结果确认 T/O 是不同配位驻点，且当前设置下 T 比 O
+低 `62.904 meV`。本项目未独立完成声子验证，因此 O 位稳定性仍依赖文献支持。
 
-本地最小镜像和配位分析已经确认两份末态是不同配位驻点：T 末态 H 的最近四个 Zr-H 距离
-为 `2.01772–2.04224 A`，O 末态最近六个约为 `2.29655 A`，二者 H 位点相距
-`1.98514991 A`。因此可以确认当前 T 构型比 O 高对称构型低 `0.062904 eV`
-（`62.904 meV`），且二者相对 `1/2 E(H2)` 的溶解能均为负。O 从精确对称中心起算，零力
-本身不能排除鞍点；但已有 α-Zr-H 振动/声子研究报告 T、O 均无虚频，因此 O 可归类为
-文献支持的亚稳局域极小。本项目未自行完成声子验证。
-
-## 5. 本地分析产物
-
-可复现脚本 [`../tools/analyze_initial.py`](../tools/analyze_initial.py) 已生成
-[`analysis/`](analysis/) 中的三个 TSV、六组 PNG/PDF 图，并通过数值回归和视觉检查。其中
-[`03b_t_h_initial_final.png`](analysis/03b_t_h_initial_final.png) 对比了 T 位初始/末态 H
-位置，并用单独的坐标放大图显示其主要沿 `+c` 方向的微小位移。
-
-- 详细归纳报告：[`../doc/Zr96-H初始数据分析与归纳-20260728.md`](../doc/Zr96-H初始数据分析与归纳-20260728.md)
-- 精简分享报告：[`../doc/Zr96-H初始结果精简分享-20260728.md`](../doc/Zr96-H初始结果精简分享-20260728.md)
+完整分析见 [Zr96-H 初始数据分析与归纳](Zr96-H初始数据分析与归纳-20260728.md)。机器可读表格
+和图片位于 [`analysis/`](analysis/)，可由 [`../tools/analyze_initial.py`](../tools/analyze_initial.py)
+重新生成。
 
 ![Initial Zr96-H summary](analysis/05_share_summary.png)
 
-## 6. 后续路线
+## 从仓库内结果复算
 
-配位身份已经确认。O 的离位扰动仍可作为独立稳定性复核，但不是当前玩具扩散流程的前置条件。
-当前 T 末态已通过空间群对称操作整体映射成最近的 c 向 T2；该操作同时转移 H 和局域 Zr
-松弛场，并用理想宿主结构做一一原子置换，因此不再计算第二份端点波函数。
+从仓库根目录执行：
 
-[`../02_endpoints/01_tt_c_symmetry/`](../02_endpoints/01_tt_c_symmetry/) 记录 T2 和完整映射；
-[`../03_neb/01_tt_c/`](../03_neb/01_tt_c/) 与
-[`../03_neb/02_to/`](../03_neb/02_to/) 已含 00–05 图像。下一步在 SCNet 组装私有 POTCAR，
-先做 `TT_c` 普通NEB预弛豫（`EDIFFG=-0.10 eV/A`），再由其 `CONTCAR` 建立
-CI-NEB（`LCLIMB=.TRUE.`、`EDIFFG=-0.03 eV/A`）；TT验收后再按相同两阶段路线做TO。
-纯基面 `3.2342 A` T→T 直连路径暂不计算，因为它包含
-T→O→T 两个基本跳跃，不能解释成单个基本跃迁。
+```bash
+python tools/analyze_initial.py \
+  --results-root 01_initial \
+  --output-dir 01_initial/analysis
+```
 
-本路线仍属于流程演示/玩具任务：没有完成 Zr-H 专门的 k 点、ENCUT、有限尺寸、6 图像或
-振动/ZPE验证，不能把后续势垒表述为高精度扩散参数。
+脚本检查必需文件、正常结束与收敛标志、原子数和顺序、轨迹步数及关键数值回归；它不读取
+POTCAR，也不准备或启动 VASP。

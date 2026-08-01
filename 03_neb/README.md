@@ -47,35 +47,20 @@ NEB改进切线和CI算法的原始方法依据为：
 SCNet上的VTST官方 `dist.pl` 已对TT CI目录的6幅POSCAR做只读检查。它对所有原子采用
 周期性最小镜像位移，并报告整体RSS结构距离；结果与本地独立核验逐位一致：
 
-| 比较 | 距离（A） |
-| --- | ---: |
-| `00 → 05` | `1.25191951837223` |
-| `00 → 01` | `0.259825314117995` |
-| `01 → 02` | `0.257682862474448` |
-| `02 → 03` | `0.256253978894787` |
-| `03 → 04` | `0.255454023789007` |
-| `04 → 05` | `0.255351641504885` |
-
-五段相邻距离均约为 `0.255–0.260 A`，没有出现某一段异常集中，因此当前4幅中间图像
-在几何上分布均匀，不需要仅因该检查增加到6幅。`dist.pl` 只读POSCAR，不会修改输入或
-启动VASP。它的全体系RSS距离不能与 `tools/analyze_neb.py` 中仅跟踪H原子的累计反应
-坐标混用；后者用于最终能量路径作图。更多工具边界见 [`../tools/README.md`](../tools/README.md)。
-
 ## SCNet执行顺序
 
-服务器二进制已经只读确认包含 `VTST 4.2` 与 `LCLIMB`，并锁定：
+服务器配置的 VASP 二进制已经只读确认包含 `VTST 4.2` 与 `LCLIMB`，并锁定内容哈希：
 
 ```text
-/work/home/liuzhixiao/software/dcu-port-2Feb2023-all/bin/vasp_std
+VASP_BIN=<configured VASP executable>
 SHA-256: a1b25c7ebf384a3147aa3ad8f77ba5fa020d8eacb8755f81e56d04cafabb1b6f
 ```
 
-先只运行 TT 预弛豫：
+从仓库根目录先只运行 TT 预弛豫：
 
 ```bash
-cd /work/home/liuzhixiao/Zr-ckj
-bash 07_h_diffusion_quickstart/tools/assemble_neb_potcars.sh 03_neb/01_tt_c
-cd 07_h_diffusion_quickstart/03_neb/01_tt_c
+bash tools/assemble_neb_potcars.sh 03_neb/01_tt_c
+cd 03_neb/01_tt_c
 sha256sum -c inputs.sha256
 sbatch job.slurm
 ```
@@ -114,16 +99,15 @@ grep -E 'running on|each image running' vasp.stdout
 预期包含 `running on 16 total cores` 和 `each image running on 4 cores`。若不符合，立即取消
 作业并保留输出诊断，不继续消耗节点时。SCNet上的实际跨节点加速比仍需本次CI作业验证。
 
-CI阶段的服务器目录约定为：
+CI阶段相对于仓库根目录的目录约定为：
 
 ```text
-/work/home/liuzhixiao/Zr-ckj/07_h_diffusion_quickstart/03_neb/01_tt_c/ci_01/
+03_neb/01_tt_c/ci_01/
 ```
 
-只同步仓库中的CI输入与manifest，不上传POTCAR；到服务器后再运行：
+只同步仓库中的CI输入与manifest，不上传POTCAR；从仓库根目录运行：
 
 ```bash
-cd /work/home/liuzhixiao/Zr-ckj/07_h_diffusion_quickstart
 bash tools/assemble_neb_potcars.sh 03_neb/01_tt_c/ci_01
 cd 03_neb/01_tt_c/ci_01
 sha256sum -c inputs.sha256
@@ -193,4 +177,4 @@ python tools/analyze_neb.py \
 普通NEB与CI两段。
 
 本路线仍是 `450 eV + Gamma 4x4x3 + 4图像` 玩具任务，不包含6图像、ZPE、有限尺寸或
-Zr-H专门参数收敛。预计不含排队：TT两阶段约30–60小时，TO约45–90小时。
+Zr-H专门参数收敛。

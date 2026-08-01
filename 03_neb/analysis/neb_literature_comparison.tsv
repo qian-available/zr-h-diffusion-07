@@ -1,0 +1,20 @@
+source	year	method_or_provenance	path	barrier_eV	doi	direct_or_secondary
+Andolina	2022	DFT-NEB; direct local Andolina 2022 Table 1	TT	0.09100000	10.1016/j.commatsci.2022.111384	direct
+Andolina	2022	DFT-NEB; direct local Andolina 2022 Table 1	TO	0.41000000	10.1016/j.commatsci.2022.111384	direct
+Andolina	2022	DFT-NEB; direct local Andolina 2022 Table 1	OT	0.38900000	10.1016/j.commatsci.2022.111384	direct
+Andolina	2022	DFT-NEB; direct local Andolina 2022 Table 1	OO	0.46500000	10.1016/j.commatsci.2022.111384	direct
+Zhang	2017	DFT-NEB; direct local Zhang 2017 Table 1	TT	0.12900000	10.1038/srep41033	direct
+Zhang	2017	DFT-NEB; direct local Zhang 2017 Table 1	TO	0.40600000	10.1038/srep41033	direct
+Zhang	2017	DFT-NEB; direct local Zhang 2017 Table 1	OT	0.34600000	10.1038/srep41033	direct
+Zhang	2017	DFT-NEB; direct local Zhang 2017 Table 1	OO	0.39800000	10.1038/srep41033	direct
+Domain	2002	DFT values reproduced in Andolina 2022 Table 1	TT	0.12000000	10.1016/S1359-6454(02)00173-8	secondary
+Domain	2002	DFT values reproduced in Andolina 2022 Table 1	TO	0.41000000	10.1016/S1359-6454(02)00173-8	secondary
+Domain	2002	DFT values reproduced in Andolina 2022 Table 1	OT	0.35000000	10.1016/S1359-6454(02)00173-8	secondary
+Domain	2002	DFT values reproduced in Andolina 2022 Table 1	OO	0.41000000	10.1016/S1359-6454(02)00173-8	secondary
+Wimmer	2020	Values attributed to Wimmer in Andolina 2022 Table 1	TT	0.13000000	10.1016/j.jnucmat.2020.152055	secondary
+Wimmer	2020	Values attributed to Wimmer in Andolina 2022 Table 1	TO	0.42000000	10.1016/j.jnucmat.2020.152055	secondary
+Wimmer	2020	Values attributed to Wimmer in Andolina 2022 Table 1	OT	0.35000000	10.1016/j.jnucmat.2020.152055	secondary
+Wimmer	2020	Values attributed to Wimmer in Andolina 2022 Table 1	OO	0.44000000	10.1016/j.jnucmat.2020.152055	secondary
+This work	2026	Internal 0 K PBE/PAW CI-NEB result	TT	0.12919004		internal
+This work	2026	Internal 0 K PBE/PAW CI-NEB result	TO	0.42502420		internal
+This work	2026	Internal 0 K PBE/PAW CI-NEB result	OT	0.36212020		internal

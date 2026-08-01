@@ -19,5 +19,9 @@
 # Local paper PDFs and extracted figures used for literature review.
 /literature_materials/
 
+# Local project documentation and version-control notes.
+/doc/
+/VERSION_CONTROL.md
+
 # Temporary downloads.
 /tmp/

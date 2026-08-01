@@ -1,36 +1,172 @@
-# Zr96-H 扩散：DCU 玩具任务版
+# Zr96-H 氢扩散 CI-NEB 快速验证
 
-本目录采用显式 VASP 算例：每个计算目录直接保存 `POSCAR`、`INCAR`、`KPOINTS` 和
-`job.slurm`，不使用 Python 总控脚本。
+本仓库记录 α-Zr 96 原子超胞中单 H 的初始位点弛豫、扩散端点构造，以及 TT、TO/OT 两条
+基本跳跃的普通 NEB 与 CI-NEB 计算。当前结果用于流程验证和数量级分析，不作为已经完成系统
+参数收敛的高精度扩散数据。
 
-版本管理仅覆盖本目录，采用私有GitHub仓库、单一 `main` 分支和阶段标签；规则见
-[`VERSION_CONTROL.md`](VERSION_CONTROL.md)。
-
-当前简化路线为：
+当前路线为：
 
 ```text
-已完成的高精度 Zr96 与 H2 保留
-  -> 已完成 4x4x3 DCU 版 Zr96、T、O
-  -> 已确认 T/O 不同配位末态并计算玩具版溶解能
-  -> 已由 T 末态经精确对称操作生成 c 向等价 T2（不做端点 VASP）
-  -> TT_c 的4图像普通NEB预弛豫已通过0.10 eV/A门槛
-  -> TT_c 的CI-NEB使用旧1节点/4-DCU配置，已提交并正在运行
-  -> TO 的4图像普通NEB预弛豫已通过0.10 eV/A门槛
-  -> TO CI-NEB首次4节点作业完成1步后主动取消；96-CPU续算触发启动器段错误
-  -> ci_03已恢复128 CPU并提交为Job 62475824，启动与收敛结果待验收
+已完成的高精度 CPU Zr96 static 与 H2 relax 保留
+  -> 旧 5×5×4 CPU T/O relax 因运行过慢停止，原始输出保留
+  -> 以统一 4×4×3 DCU 设置完成新的 Zr96 static、T relax 和 O relax
+  -> 确认 T/O 为四配位/六配位不同末态，并用同设置 Zr96 基准计算溶解能
+  -> 由 T 末态的全结构精确对称映射生成等能 T2，不重复计算第二端点
+  -> TT_c 与 TO 的 4 图像普通 NEB 均通过 0.10 eV/Å 预弛豫门槛
+  -> TT CI-NEB 通过验收，正式势垒 0.129 eV
+  -> TO CI 首次运行完成 1 步后主动取消；96-CPU 续算在启动器层段错误
+  -> 恢复 128-CPU/16-DCU 布局并从有效 CONTCAR 续算，TO/OT 最终通过验收
+  -> 正式势垒为 TT 0.129 eV、TO 0.425 eV、OT 0.362 eV
 ```
 
-本路线以快速跑通流程为目的，不宣称完成 Zr-H k 点、有限尺寸或精确鞍点收敛。
+## 主要结果
 
-## 当前状态（2026-07-31）
+当前计算设置为 PBE/PAW、`ENCUT = 450 eV`、Gamma-centered `4 × 4 × 3` k 点网格、
+4 个中间图像，以及 `0.03 eV/Å` 的最终 CI-NEB 投影力门槛。
 
-服务器项目目录：
+| 跳跃 | 方向 | 鞍点图像 | 正式电子势垒 (eV) | 最终全路径最大投影力 (eV/Å) | 验收 |
+| --- | --- | ---: | ---: | ---: | --- |
+| TT | T1 → 对称等价 T2 | `03` | **0.12919004** | 0.029753 | 通过 |
+| TO | T → O | `02` | **0.42502420** | 0.029600 | 通过 |
+| OT | O → T，反向读取同一条 TO 计算带 | `02` | **0.36212020** | 与 TO 共用 | 通过 |
+
+TO 与 OT 的势垒差满足独立的热力学闭合关系：
 
 ```text
-/work/home/liuzhixiao/Zr-ckj/
+TO - OT = E0(O) - E0(T) = 0.06290400 eV
 ```
 
-已确认势：
+两条最终 CI 轨迹都在最后一个离子步首次低于 `0.03 eV/Å`。TT 和 TO 的力裕量分别只有
+`0.000247` 和 `0.000400 eV/Å`，因此结论是“按当前标准通过，但力裕量较小”。力门槛不能
+直接解释为势垒的不确定度。
+
+![TT and TO/OT CI-NEB energy profiles](03_neb/analysis/neb_energy_profiles.png)
+
+## 初始数据血缘与能量组合
+
+初始批次不是把所有“看起来更精细”的数据直接混在一起，而是先保证能量差中的 Zr96 与
+Zr96H 使用同一数值设置。旧 CPU 与新 DCU 数据的职责如下：
+
+| 数据 | 数值设置 | 运行结果 | 当前用途 |
+| --- | --- | --- | --- |
+| 旧 CPU Zr96 static，Job `62040127` | `5×5×4`、`EDIFF=1E-7`、`LREAL=.FALSE.` | 完成，`E0=-818.00059399 eV` | 高精度历史参考，不混入当前溶解能 |
+| 旧 CPU T/O relax，Jobs `62040731/62040755` | `5×5×4`、`EDIFF=1E-7`、`LREAL=.FALSE.` | 因运行过慢停止 | 只保留原始输出，不作为完成的 T/O 结果 |
+| 新 DCU Zr96 static，Job `62149576` | `4×4×3`、`EDIFF=1E-6`、`LREAL=Auto` | 完成，`E0=-818.11976349 eV` | 与新 T/O 同设置的当前 Zr96 能量基准 |
+| 新 DCU T/O relax，Jobs `62134983/62148446` | `4×4×3`、`EDIFF=1E-6`、`LREAL=Auto` | 13/12 步收敛 | 当前 T/O 末态结构与能量 |
+| 既有 H2 relax，Job `62040677` | Gamma-only、`EDIFF=1E-8`、`LREAL=.FALSE.` | 2 步收敛，`E0=-6.76804846 eV` | 独立分子化学势参考，保留使用 |
+
+旧 CPU Zr96 并没有算错；它只是与新 DCU T/O 的 k 网格、电子阈值和实空间投影设置不同。
+新 Zr96 因此只做 `IBRION=-1、NSW=0、ISYM=2` 的单点 static，以获得与新 T/O 可配套的
+宿主能量，不需要再次弛豫理想 Zr96。新旧 Zr96 的绝对 E0 相差约 `0.11917 eV`，也说明不能
+跨设置拼接能量差。
+
+当前溶解能严格使用：
+
+```text
+Esol(T/O)
+= E0[4×4×3, Auto 的 Zr96H(T/O) relax 末态]
+- E0[4×4×3, Auto 的 Zr96 static]
+- 1/2 E0[既有 H2 relax]
+```
+
+T/O 的正式端点能量直接读取各自 relax 最后一个 `energy(sigma->0)`，没有另做 `5×5×4`
+高精度 final static，也不能用 `TOTEN` 替代 E0。H2 是独立分子参考，已在 Gamma-only 设置下
+高精度收敛，因此本轮不因 Zr96/T/O 改用 DCU 而重复计算。
+
+## 路径与迁移机制
+
+- `TT_c`：四配位 T1 经三配位三角面瓶颈迁移到沿 c 方向相邻的四配位等价 T2。
+- `TO/OT`：四配位 T 经三配位三角面瓶颈迁移到六配位 O；OT 是同一条计算带的反向势垒，
+  不是第三次独立 NEB 计算。
+- TT 鞍点为图像 `03`；TO/OT 鞍点为图像 `02`。
+- 两条路径均未发现回跳、相邻图像塌缩或大范围 Zr 重构。全路径最短原子距离分别为
+  `1.98330676 Å`（TT）和 `1.93234117 Å`（TO）。
+- 当前单条微观跳跃势垒不能直接等同于宏观 c 轴或基面扩散活化能；宏观输运还需要完整跳跃
+  网络、位点占据和尝试频率。
+
+T2 不是只把 H 平移到另一个理想间隙中心。端点生成器对 T1 末态的全部 97 个原子应用精确
+晶体对称操作
+
+```text
+S(x,y,z) = (x,y,7/6-z) mod 1
+```
+
+并用未弛豫 T-POSCAR 确定 96 个 Zr 的一一行置换，将 H 偏移和局域 Zr 松弛场一起映射。
+理想结构的最大映射残差约为 `2.8×10^-15 Å`，因此 T2 与 T1 在同一哈密顿量下严格等能，
+无需再做一次端点 SCF、static 或 relax。理想 T 中心距离 `1.29150537 Å` 与包含实际松弛偏移
+后的 H 端点距离 `1.24144250 Å` 含义不同，不能混用。
+
+TO 的实际 H 端点位移为 `1.98514991 Å`，其中基面分量 `1.86838910 Å`、有符号 c 分量
+`-0.67077742 Å`。本项目没有把 `3.2342 Å` 的纯基面 T→T 直连当作一个基本跳跃，因为它
+对应 T→O→T 的较长复合路径。两条路径的四个中间图像均采用逐原子最小镜像插值，不使用
+`nebmake.pl`。
+
+![Local structures along the transition paths](03_neb/analysis/neb_transition_structures.png)
+
+## 收敛与验收证据
+
+普通 NEB 先将两条计算带预弛豫到 `0.10 eV/Å`，随后 CI-NEB 以 `LCLIMB = .TRUE.` 收敛到
+`0.03 eV/Å`。TT 共记录 `29 + 126` 个预弛豫/CI 力步，TO 共记录 `37 + 1 + 135` 个力步。
+两条路径最后 12 步的全路径最大投影力均严格下降，电子迭代达到 `EDIFF`，最终结构和阶段
+血缘检查通过。
+
+### 普通 NEB 的 HDF5 收尾异常
+
+TT pre-NEB（Job `62213597`）在 29 个离子步后达到 `0.10 eV/Å` 门槛，四幅中间图像的
+最终投影力最大值为 `0.094234 eV/Å`。TO pre-NEB（Job `62307728`）在 37 步后达到同一
+门槛，最终最大值为 `0.098468 eV/Å`。两次作业均已完整写出各图像 OUTCAR 和科学结果，
+随后在 VASP 的 IMAGES/HDF5 收尾阶段触发已知 `vhdf5.F error 29`，因此原始
+`vasp_exit=1`。
+
+验收将这种情况明确记录为 `PASS_HDF5_POSTRUN`，而不是把非零退出码改成成功。只有同时满足
+以下条件才允许接受：错误文本精确匹配已知 error 29、各图像科学输出完整、电子迭代收敛、
+投影力达到阶段门槛，并且没有其他 fatal 模式。任何发生在科学输出完成前的 HDF5/启动错误、
+未知非零退出或缺失图像输出都不能套用这一例外。
+
+### TO CI 的失败与续算血缘
+
+- `ci_01`，Job `62470978`：使用 4 节点、128 CPU task 和 16 DCU，VASP 成功启动并为四幅
+  图像各完成 1 个 CI 离子步。作业后来为了测试缩减 CPU 申请而主动取消，不是数值失败。
+- `ci_02`，Job `62474917`：从 `ci_01/01..04/CONTCAR` 续算，但将每节点申请从 32 CPU
+  减到 24 CPU 后，7 秒内四节点启动进程同时段错误；`vasp.stdout` 为空，科学计算没有开始。
+  该 A/B 结果指向 Slurm CPU 集合、旧 Intel MPI/Hydra 与 `numactl` NUMA 绑定的启动兼容
+  问题，但单次失败不能证明精确触发机制。
+- `ci_03`，Job `62475824`：继续使用 `ci_01` 已完整写出的四个 CONTCAR，不退回粗 NEB
+  几何；恢复唯一已实际验证能够启动的 4 节点、128 CPU、16 DCU 布局，随后完成 135 个记录
+  并以 `0.029600 eV/Å` 通过最终门槛，得到 TO/OT 正式势垒。
+
+`ci_01`、失败的 `ci_02` 和最终 `ci_03` 均保留原始证据。启动失败的 `ci_02` 不计入科学
+离子步，也不能解释为势垒或结构收敛失败。
+
+![Projected-force convergence](03_neb/analysis/neb_force_convergence_fixed.png)
+
+机器可读结果包括：
+
+- [路径级势垒与验收摘要](03_neb/analysis/neb_summary.tsv)
+- [逐图像能量剖面](03_neb/analysis/neb_profile.tsv)
+- [分阶段投影力历史](03_neb/analysis/neb_convergence.tsv)
+- [逐图像结构与配位指标](03_neb/analysis/neb_image_details.tsv)
+- [路径几何检查](03_neb/analysis/path_geometry.tsv)
+- [文献势垒对照](03_neb/analysis/neb_literature_comparison.tsv)
+
+## 初始位点结果
+
+初始批次使用同一套新参数的 Zr96、T 和 O 结果，并保留既有 H2 参考。当前设置下：
+
+| 位点 | 溶解能 (eV/H) | 相对 T 能量 (eV) | 最近邻配位 |
+| --- | ---: | ---: | ---: |
+| T | -0.44980706 | 0.00000000 | 4 |
+| O | -0.38690306 | +0.06290400 | 6 |
+
+T/O 松弛、能量、局域配位和结构身份的完整历史分析见
+[Zr96-H 初始数据分析与归纳](01_initial/Zr96-H初始数据分析与归纳-20260728.md)。原始输出已同步到
+`01_initial/`，派生的 TSV、PNG 和 PDF 位于 `01_initial/analysis/`。
+
+![Initial Zr96-H summary](01_initial/analysis/05_share_summary.png)
+
+## 势文件身份与复算约束
+
+所有可比较的 Zr96、Zr96H 端点和 NEB 计算必须使用同一套 PAW 势身份：
 
 ```text
 Zr_sv: PAW_PBE Zr_sv 04Jan2005
@@ -40,329 +176,65 @@ H: PAW_PBE H 15Jun2001
 SHA-256: b9ed9e0fd4e660c858a39f59be6bb91671733b1136a5cd56b772198ffb3ec7fb
 ```
 
-旧 CPU 作业记录：
+不得把 `Zr_sv 04Jan2005` 换成名称相似但内容不同的 `Zr_sv 07Sep2000`；二者不是可互换的同一
+势文件。复算时应通过 `ZR_SV_POTCAR`、`H_POTCAR` 等环境变量向组装脚本提供私有势，并按
+解压后的实际内容核对 SHA-256。压缩或未压缩存储形式可以不同，势内容哈希必须一致。
 
-| Job ID | 任务 | 当前记录 |
-| --- | --- | --- |
-| `62040127` | 原 Zr96 `5x5x4` static | 用户确认已算完，保留为高精度参考 |
-| `62040677` | H2 relax | 已正常结束，电子与离子均收敛，继续使用 |
-| `62040731` | 原 T `5x5x4` relax | 因运行过慢由用户停止，原输出保留 |
-| `62040755` | 原 O `5x5x4` relax | 因运行过慢由用户停止，原输出保留 |
+POTCAR 只在计算环境本地组装，不提交到 Git，也不从公共 GitHub 仓库分发。输入 manifest
+只保留势身份和内容哈希，不能用文件名相同代替内容验证。
 
-新 DCU 初始批次已经完成并下载归档：
-
-| Job ID | 任务 | 验收结果 |
-| --- | --- | --- |
-| `62149576` | 新 Zr96 `4x4x3` static | 正常结束，电子收敛 |
-| `62134983` | T 初态 Zr96H relax | 13 步收敛，最大力 `0.00874278 eV/A` |
-| `62148446` | O 初态 Zr96H relax | 12 步收敛，最大力 `0.00420013 eV/A` |
-
-TT预NEB（Job `62213597`）在29个离子步后达到 `0.10 eV/A` 门槛，四幅中间图像的最终
-投影力最大值为 `0.094234 eV/A`。该旧DCU VASP在完整写出OUTCAR后触发已知
-`IMAGES/HDF5 error 29`，所以原始 `vasp_exit=1`；验收保留该事实并记为
-`PASS_HDF5_POSTRUN`，没有重算或伪造退出码。原始证据已经下载并由Git LFS管理。
-TT CI-NEB是在资源配置更新前生成和提交的旧作业，使用1节点、32 CPU task和总计4块DCU，
-即4幅中间图像各使用1块DCU；当前正在运行。是否收敛及最终势垒须等作业结束后再由检查
-脚本确认。2026-07-30新增的4节点配置不会追溯修改这个已运行的TT作业。
-
-TO预NEB（Job `62307728`）在37个离子步后达到 `0.10 eV/A` 门槛，四幅中间图像的最终
-投影力最大值为 `0.098468 eV/A`。结果同样在完整写出科学输出后触发已知
-`IMAGES/HDF5 error 29`，验收为 `PASS_HDF5_POSTRUN`。下载包SHA-256为
-`b6706ad8018ff0433879afc76e7536c75dff2f4c3e2f2e64dd228eb30d874cbc`；本地复验通过，
-并已由四个最终 `CONTCAR` 生成 `03_neb/02_to/ci_01`。
-
-TO CI首次尝试（Job `62470978`）使用4节点、16块DCU和128个CPU task。VASP成功启动并为
-四幅图像各完成1个CI离子步；末次投影力分别为 `0.098625/0.221105/0.052384/0.044122
-eV/A`。该作业不是数值失败，而是在尝试缩减CPU申请时于2026-07-31 00:16主动取消。
-`ci_02` 从其四个完整 `CONTCAR` 续算，但把每节点申请从32减为24后，Job `62474917` 在
-7秒内于四个节点的启动进程同时触发段错误；`vasp.stdout` 为空，科学计算尚未开始。这一
-A/B结果强烈指向Slurm CPU集合、旧版Intel MPI/Hydra与 `numactl` 四NUMA绑定之间的启动
-兼容问题，但单次失败尚不能证明精确机制。`ci_01` 和失败的 `ci_02` 均在服务器原样保留；
-`ci_03` 仍从 `ci_01/01..04/CONTCAR` 续算，不退回粗NEB几何，并恢复目前唯一实际启动
-成功的4节点、128 CPU和16 DCU配置。该续算已提交为Job `62475824`，启动与收敛结果待
-后续验收，不能提前记为成功。
-
-本地最小镜像与配位分析确认 T/O 分别保持四配位与六配位的不同末态。当前溶解能为
-`Esol(T)=-0.44980706 eV/H`、`Esol(O)=-0.38690306 eV/H`，T 比 O 低 `62.904 meV`。
-O 从高对称中心起算，本次 relax 本身只证明其为驻点；已有 α-Zr-H 振动/声子研究报告 O 位
-无虚频，支持将其定性为亚稳局域极小。本项目未自行计算声子。T2 已由整个 T 末态的精确晶体
-对称映射生成，数学上与 T1 等能，因此不再浪费一次端点 SCF/static/relax。TT_c 和 TO 的
-普通NEB均已完成，TO CI输入已生成；最终势垒仍只能在相应CI阶段通过验收后报告。
-
-详细结果见 [`doc/Zr96-H初始数据分析与归纳-20260728.md`](doc/Zr96-H初始数据分析与归纳-20260728.md)，
-精简分享版见 [`doc/Zr96-H初始结果精简分享-20260728.md`](doc/Zr96-H初始结果精简分享-20260728.md)。
-
-## 1. 新旧参数
-
-旧 CPU 参数保留不动。新的 Zr96/T/O DCU 算例统一使用：
+## 仓库结构
 
 ```text
-ENCUT = 450 eV
-EDIFF = 1E-6
-LREAL = Auto
-KPOINTS = Gamma-centered 4x4x3
+.
+├── 01_initial/       # Zr96、H2、T/O 初始计算、原始输出与派生分析
+├── 02_endpoints/     # 由晶体对称性生成的等价 T2 端点与映射记录
+├── 03_neb/           # TT、TO 的 pre-NEB/CI-NEB 输入、结果和分析产物
+├── tools/            # 检查、阶段生成、势垒分析和报告资产构建工具
+├── .gitattributes    # Git LFS 与行尾规则
+└── README.md
 ```
 
-T/O relax 另外使用：
+VASP 授权势文件不进入仓库。`POTCAR`、重启文件和可能嵌入完整势内容的 HDF5 输出由忽略规则
+排除；大型 `OUTCAR`、`vasprun.xml`、`XDATCAR` 和 `vasp.stdout` 使用 Git LFS 管理。
 
-```text
-IBRION=2, NSW=200, ISIF=2
-EDIFFG=-0.01 eV/A, POTIM=0.30
-ISYM=0
-```
+## 复算与检查
 
-新的 Zr96 参考使用 `IBRION=-1、NSW=0、ISYM=2`。H2 不修改、不重算。
+以下命令均从仓库根目录执行。
 
-选择 `4x4x3` 的依据：原 Zr2 在 `ENCUT=450 eV` 下，`KSPACING=0.15 A^-1` 相对
-`0.12 A^-1` 的能量变化约为 `0.817 meV/atom`；`4x4x3` 约等效于这一档原胞密度。
-
-## 2. 目录职责
-
-```text
-07_h_diffusion_quickstart/
-├── README.md
-├── 01_initial/
-│   ├── 01_zr96_static/
-│   │   └── retry_dcu_01/       # 新 4x4x3 DCU static
-│   ├── 02_h2_relax/            # 已完成，保持不动
-│   ├── 03_t_relax/
-│   │   └── retry_dcu_01/       # 新 4x4x3 DCU relax
-│   ├── 04_o_relax/
-│   │   └── retry_dcu_01/       # 新 4x4x3 DCU relax
-│   └── analysis/               # 本地 TSV、PNG 和 PDF 派生结果
-├── 02_endpoints/
-│   └── 01_tt_c_symmetry/       # 数学生成的 T2 与映射 manifest；不是计算目录
-├── 03_neb/
-│   ├── 01_tt_c/                # 00–05，T→c 向等价 T
-│   └── 02_to/                  # 00–05，已弛豫 T→已弛豫 O
-├── doc/
-└── tools/
-```
-
-原目录的 CPU 输出不得删除、移动或覆盖。新任务只在 `retry_dcu_01` 中写入。
-
-## 3. DCU 环境
-
-单构型和普通NEB作业继承服务器 `~/vasp-dcu.slurm`：
-
-```text
-partition: xahdnormal
-nodes: 1
-CPU tasks: 32
-GRES: dcu:4
-compiler: Intel 2020.1.217
-MPI: IntelMPI 2020.1.217
-DTK: 22.10
-VASP environment: /work/home/liuzhixiao/software/dcu-port-2Feb2023-all/env.sh
-```
-
-脚本启动4个 MPI 进程，分别绑定 DCU `0`、`1`、`2`、`3`，每个进程使用6个 CPU 线程。
-INCAR 不设置 CPU 版的 `NCORE/NPAR/KPAR`。
-
-TO CI-NEB保持4节点、每节点32 CPU和4块DCU，共128 CPU及16个MPI/DCU rank。虽然
-`16 MPI × 6 OpenMP` 的工作线程数为96，但当前启动器还用 `numactl` 将每节点4个rank绑定
-到4个NUMA节点。`ci_02` 将Slurm申请缩到每节点24 CPU后，四节点启动进程立即段错误；
-现有证据尚不能区分CPU集合、Hydra或 `numactl` 中哪一层是精确触发点，因此不能仅按
-OpenMP线程总数缩减生产作业。当前回退到唯一已成功启动的128 CPU布局。正在运行的TT CI
-仍是旧的1节点/4-DCU配置。
-`IMAGES=4` 将其等分为每图像4 rank；作业生成器按“单节点4个设备连续、再到下一节点”写
-Intel MPI configfile，使每个图像落在一个节点内。该布局符合VASP的图像划分和rank先填满
-节点的要求，但SCNet上的首次4节点生产运行仍须在启动后核查 `vasp.stdout` 是否报告
-`running on 16 total cores` 与 `each image running on 4 cores`。不额外设置未经本机基准测试的
-`NCORE/NPAR/KPAR`。
-
-## 4. 在服务器组装新 POTCAR
-
-以下第 4–7 节保留为本批任务的历史准备与提交记录；对应作业已经完成，不应重复提交。
-
-上传以下两个新文件到 `/work/home/liuzhixiao/Zr-ckj/`：
-
-```text
-Zr_H_quickstart_07_DCU_20260728.tar.gz
-Zr_H_quickstart_07_DCU_20260728.tar.gz.sha256
-```
-
-在服务器项目根目录校验并解压：
+重新生成初始分析：
 
 ```bash
-cd /work/home/liuzhixiao/Zr-ckj
-sha256sum -c Zr_H_quickstart_07_DCU_20260728.tar.gz.sha256
-tar -xzf Zr_H_quickstart_07_DCU_20260728.tar.gz
+python tools/analyze_initial.py \
+  --results-root 01_initial \
+  --output-dir 01_initial/analysis
 ```
 
-校验必须显示 `OK`。压缩包会新增 `retry_dcu_01` 并更新 README/tools，不含 POTCAR，也不会
-删除已有 CPU 输出。
-
-随后组装新 POTCAR：
+运行核心 NEB 工具测试：
 
 ```bash
-cd /work/home/liuzhixiao/Zr-ckj
-ZR_SV_POTCAR=/work/home/liuzhixiao/Zr-ckj/private_potentials/Zr_sv_04Jan2005/POTCAR.gz \
-  bash 07_h_diffusion_quickstart/tools/assemble_potcars.sh
+python tools/test_neb_tools.py
 ```
 
-脚本不会改动已有输出的旧目录；它只验证旧输入并为三个新 `retry_dcu_01` 组装 POTCAR、
-生成 `inputs.sha256`。成功时应看到三个新目录的 `READY` 和最终 `POTCAR assembly PASS`。
+完整 NEB 报告资产构建器位于
+[`tools/build_neb_report_assets.py`](tools/build_neb_report_assets.py)。重新生成图表需要本地保留的
+下载归档、NumPy、Pillow 和 Matplotlib。
 
-## 5. 提交前检查 T
+## 科学边界
 
-```bash
-cd /work/home/liuzhixiao/Zr-ckj/07_h_diffusion_quickstart/01_initial/03_t_relax/retry_dcu_01
-sha256sum -c inputs.sha256
-grep -E 'ENCUT|EDIFF|LREAL|IBRION|NSW|EDIFFG|ISYM' INCAR
-cat KPOINTS
-grep '^#SBATCH' job.slurm
-```
+当前结果尚未完成以下系统验证：
 
-应确认：
+- 没有做 T/O 的 `5×5×4` 高精度 final static；当前端点能量来自 `4×4×3` relax 末态 E0。
+- 没有做 CPU/DCU 绝对能量复现，也没有把旧 CPU Zr96 与新 DCU T/O 混合计算溶解能。
+- 没有做 `3×3×2` k 点对照、Zr-H 专门的系统 k 点收敛或 `LREAL=Auto` 对缺陷能差的误差检查。
+- 没有完成 ENCUT、超胞尺寸和有限尺寸系统收敛。
+- 没有用至少 6 个中间图像复核鞍点位置，也没有把最终 CI 力继续压到 `0.01 eV/Å`。
+- 没有对端点或鞍点做 Hessian/声子分析，因而没有自行证明 O 位无虚频或鞍点恰有一个虚频。
+- 没有加入零点能、有限温度振动自由能、非谐效应或核量子效应。
+- 没有完成 OO、长程 TT、替代最小能量路径或缺陷辅助路径的系统搜索。
+- 没有完整跳跃网络、位点占据和尝试频率，不能由三条静态势垒直接推出扩散系数或宏观各向异性。
 
-```text
-Zr H / 96 1
-ENCUT=450
-EDIFF=1E-6
-LREAL=Auto
-4 4 3
-xahdnormal
-dcu:4
-```
+因此，应将 `0.129/0.425/0.362 eV` 表述为当前离散设置下通过既定验收标准的 CI-NEB 电子
+势垒，不应宣称为严格收敛的实验活化能或有限温度自由能势垒。
 
-## 6. 第一次只提交 T
-
-本次任务配置：
-
-```text
-任务数：1
-资源：1 节点、32 CPU task、4 块 DCU
-墙时上限：24 h
-写入目录：03_t_relax/retry_dcu_01
-失败恢复：保留目录，另建 retry_dcu_02
-```
-
-确认输入后，在 T 的新目录执行：
-
-```bash
-sbatch job.slurm
-```
-
-查看：
-
-```bash
-squeue -u liuzhixiao
-tail -n 20 vasp.stdout
-tail -n 20 vasp.stderr
-```
-
-若出现 HIP、动态库、DTK 或 DCU 绑定错误，停止后先检查现有 DCU 二进制；只有确认为版本
-不兼容时才去 SCNet 商城安装新的西北一区 VASP-DCU。
-
-## 7. T 正常后提交 O 与 Zr96
-
-T 能正常进入电子迭代且速度明显改善后，分别进入：
-
-```text
-01_initial/04_o_relax/retry_dcu_01
-01_initial/01_zr96_static/retry_dcu_01
-```
-
-各执行一次：
-
-```bash
-sbatch job.slurm
-```
-
-不要在旧 CPU 目录重复提交。
-
-## 8. 第一批结果检查
-
-新 Zr96、T、O 全部结束后，从服务器项目根目录执行：
-
-```bash
-bash 07_h_diffusion_quickstart/tools/check_initial.sh
-```
-
-工具读取：
-
-```text
-新 4x4x3 Zr96 static
-旧的已完成 H2 relax
-新 4x4x3 T relax
-新 4x4x3 O relax
-```
-
-它检查正常结束、电子/离子收敛、原子数、最终 `energy(sigma->0)` 和最大力。本批四项均已
-通过。后续本地分析又检查了两份 `CONTCAR` 的最小镜像位移、H-Zr 配位和位点间距，确认
-T/O 为两个不同配位驻点；结合已有无虚频的文献结果，O 归类为亚稳局域极小，但这不是本项目
-自行完成的声子验证。
-
-玩具版溶解能定义：
-
-```text
-Esol = E_4x4x3,Auto(Zr96H)
-     - E_4x4x3,Auto(Zr96)
-     - 1/2 E_existing(H2)
-```
-
-## 9. 已生成的端点与 NEB 输入
-
-无 VASP 生成命令：
-
-```bash
-python 07_h_diffusion_quickstart/tools/prepare_neb_paths.py \
-  --results-root 07_H_diffussion_result/ZrH07_initial_results_20260728/07_h_diffusion_quickstart \
-  --output-root 07_h_diffusion_quickstart
-```
-
-脚本读取下载结果中的 T/O `POSCAR、CONTCAR、OUTCAR、.run_status`，不读取 POTCAR。它用
-`S(x,y,z)=(x,y,7/6-z) mod 1` 映射全部 97 个原子，并用理想 T-POSCAR 确定 Zr 行置换。
-理想 T 中心间距为 `1.29150537 A`；将 T 的实际松弛偏移一并镜像后，两实际 H 端点相距
-`1.24144250 A`。两者含义不同，不能混用。
-
-生成器还建立 `TT_c` 和 `TO` 的 `00–05`，中间4图像采用逐原子最小镜像插值。TO 实际
-H 端点位移为 `1.98514991 A`，其中基面分量 `1.86838910 A`、c 分量
-`-0.67077742 A`。本项目不使用 `nebmake.pl`。
-
-上传到 SCNet 后，在项目根目录组装私有 POTCAR 并锁定输入：
-
-```bash
-bash 07_h_diffusion_quickstart/tools/assemble_neb_potcars.sh 03_neb/01_tt_c
-cd 07_h_diffusion_quickstart/03_neb/01_tt_c
-sha256sum -c inputs.sha256
-sbatch job.slurm
-```
-
-脚本默认读取本项目私有的
-`/work/home/liuzhixiao/Zr-ckj/private_potentials/Zr_sv_04Jan2005/POTCAR`。
-不得改用 SCNet 公共目录中的 `Zr_sv/POTCAR.Z`；后者是已知的 `07Sep2000` 版本，与初始
-Zr96/T/O 计算所用 `04Jan2005` 版本不一致。必要时可用 `ZR_SV_POTCAR` 显式指定同一私有
-势文件；压缩和未压缩格式均可识别，脚本按解压后的内容计算 SHA-256。
-
-先只提交 `TT_c` 的普通NEB预弛豫。其达到 `0.10 eV/A` 后，用
-`tools/prepare_neb_stage.py` 从4个 `CONTCAR` 建立 `ci_01`，再以 `0.03 eV/A` 完成
-CI-NEB。TT两个阶段均验收后才开始TO。详细命令见
-[`03_neb/README.md`](03_neb/README.md)。本地路径生成不等于NEB已计算，当前不存在可报告势垒。
-
-## 10. 后续与边界
-
-端点和NEB延续 `4x4x3 + EDIFF=1E-6 + LREAL=Auto + DCU`，保持4个中间图像。
-普通NEB只预弛豫到 `0.10 eV/A`；最终CI-NEB以 `LCLIMB=.TRUE.` 收敛到
-`0.03 eV/A`。已确认SCNet DCU二进制包含VTST 4.2并锁定其SHA-256。
-NEB投影力从各中间图像 `OUTCAR` 的 `FORCES: max atom, RMS` 读取，并以四幅图像末次
-最大值作为阶段判据；根目录 `vasp.stdout` 不作为该数值来源。
-
-VTST官方 `dist.pl` 对TT CI六幅图像的只读核验给出端点全体系RSS距离
-`1.25191951837223 A`，五段相邻距离均约为 `0.255–0.260 A`，说明4幅中间图像分布均匀，
-目前没有增加图像数的几何依据。这里的全体系距离不同于 `tools/analyze_neb.py` 用于作图的
-H原子累计反应坐标；完整工具说明见 [`tools/README.md`](tools/README.md)。
-
-本路线不做：
-
-- T/O 的 `5x5x4` 最终 static；
-- CPU/DCU 能量复现；
-- `3x3x2` 对照；
-- 6图像或有限尺寸检查。
-
-结果应标为玩具任务/流程演示，不用于宣称高精度扩散参数。
-
-服务器固定环境见
-[`doc/SCNet_server_configuration.md`](doc/SCNet_server_configuration.md)，维护与下载规则见
-[`VERSION_CONTROL.md`](VERSION_CONTROL.md)。
+![Comparison with published monomer-H barriers](03_neb/analysis/21_literature_barriers.png)
